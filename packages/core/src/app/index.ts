@@ -1604,7 +1604,11 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
           await def._handler!({ db: boundDb, ...services }, cronLogger)
           console.log(`[Cron] ${def._name} — done (${Date.now() - start}ms)`)
         } catch (err) {
-          console.error(`[Cron] ${def._name} — error:`, err)
+          if (def._onError) {
+            def._onError(err)
+          } else {
+            console.error(`[Cron] ${def._name} — error:`, err)
+          }
         } finally {
           await this._cronLock.release(def._name)
         }
@@ -1618,7 +1622,13 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
       this._cronJobs.set(def._name, job)
 
       if (def._runOnStart) {
-        runJob().catch((err) => console.error(`[Cron] ${def._name} runOnStart error:`, err))
+        runJob().catch((err) => {
+          if (def._onError) {
+            def._onError(err)
+          } else {
+            console.error(`[Cron] ${def._name} runOnStart error:`, err)
+          }
+        })
       }
     }
   }

@@ -73,6 +73,7 @@ export interface CronDef<TServices extends Record<string, unknown> = Record<neve
   readonly _handler:    ((ctx: CronCtx & TServices, logger: Logger) => Promise<void> | void) | undefined
   readonly _services:   ReadonlyArray<ServiceDef<string, unknown>>
   readonly _script:     string | undefined
+  readonly _onError:    ((err: unknown) => void) | undefined
 
   // .use() on a sealed CronDef is kept for backwards-compat and for app.register()
   // service-merging (which spreads + re-binds). It erases the TServices type
@@ -89,6 +90,7 @@ export interface CronBuildOptions {
   runOnStart?: boolean
   ttlMs?:      number
   log?:        LogOptions
+  onError?:    (err: unknown) => void
 }
 
 // ── CronBuilder — fluent builder returned by defineCron() ─────────────────────
@@ -133,6 +135,7 @@ function makeCronDef<TServices extends Record<string, unknown>>(
   handler:    ((ctx: CronCtx & TServices, logger: Logger) => Promise<void> | void) | undefined,
   services:   ReadonlyArray<ServiceDef<string, unknown>>,
   script:     string | undefined,
+  onError:    ((err: unknown) => void) | undefined,
 ): CronDef<TServices> {
   const def: CronDef<TServices> = {
     _name:       name,
@@ -145,6 +148,7 @@ function makeCronDef<TServices extends Record<string, unknown>>(
     _handler:    handler,
     _services:   services,
     _script:     script,
+    _onError:    onError,
 
     use<TKey extends string, TDef>(
       service: ServiceDef<TKey, TDef>,
@@ -154,6 +158,7 @@ function makeCronDef<TServices extends Record<string, unknown>>(
         handler as ((ctx: CronCtx & TServices & Record<TKey, TDef>, logger: Logger) => Promise<void> | void) | undefined,
         [...services, service as ServiceDef<string, unknown>],
         script,
+        onError,
       )
     },
   }
@@ -184,7 +189,7 @@ function makeCronBuilder<TServices extends Record<string, unknown>>(
       const logger = createMinimalLogger(`cron:${name}`, resolveLogOpts(opts.log))
       return makeCronDef<TServices>(
         name, expression, opts.timezone, opts.runOnStart ?? false,
-        opts.ttlMs, logger, 'process', fn, services, undefined,
+        opts.ttlMs, logger, 'process', fn, services, undefined, opts.onError,
       )
     },
 
@@ -192,7 +197,7 @@ function makeCronBuilder<TServices extends Record<string, unknown>>(
       const logger = createMinimalLogger(`cron:${name}`, resolveLogOpts(opts.log))
       return makeCronDef<TServices>(
         name, expression, opts.timezone, opts.runOnStart ?? false,
-        opts.ttlMs, logger, 'os', undefined, services, script,
+        opts.ttlMs, logger, 'os', undefined, services, script, opts.onError,
       )
     },
   }

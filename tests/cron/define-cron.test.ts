@@ -382,9 +382,9 @@ describe('runOnStart integration', () => {
 
 describe('Error safety', () => {
   test('handler error is caught and logged — does not propagate', async () => {
-    const spy = spyOn(console, 'error').mockImplementation(() => {})
+    const errors: unknown[] = []
 
-    const def = defineCron('error.job', '* * * * *')
+    const def = defineCron('error.job', '* * * * *', { onError: (err) => errors.push(err) })
       .handler(async () => { throw new Error('job failed') })
 
     const adapter = new SQLiteAdapter()
@@ -404,8 +404,8 @@ describe('Error safety', () => {
     }
 
     await new Promise((r) => setTimeout(r, 30))
-    expect(spy).toHaveBeenCalled()
-    spy.mockRestore()
+    expect(errors.length).toBeGreaterThan(0)
+    expect((errors[0] as Error).message).toBe('job failed')
   })
 })
 
