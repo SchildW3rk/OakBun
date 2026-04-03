@@ -83,7 +83,7 @@ describe('P3 — Route-matching cache', () => {
 
 describe('P4 — Response validation clone', () => {
   function makeValidatedApp() {
-    const app = createApp()
+    const app = createApp({ onInternalError: () => {} })
     app.options({ validateResponse: true })
     return app
   }

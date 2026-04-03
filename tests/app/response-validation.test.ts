@@ -20,7 +20,7 @@ describe('response validation', () => {
   })
 
   test('validateResponse: true — valid response passes through', async () => {
-    const app = createApp()
+    const app = createApp({ onInternalError: () => {} })
     app.options({ validateResponse: true })
     app.post(
       '/items',
@@ -36,7 +36,7 @@ describe('response validation', () => {
   })
 
   test('validateResponse: true — invalid response → 500', async () => {
-    const app = createApp()
+    const app = createApp({ onInternalError: () => {} })
     app.options({ validateResponse: true })
     app.post(
       '/items',
@@ -52,7 +52,7 @@ describe('response validation', () => {
   })
 
   test('no response schema — no check regardless of setting', async () => {
-    const app = createApp()
+    const app = createApp({ onInternalError: () => {} })
     app.options({ validateResponse: true })
     app.get('/health', (ctx) => ctx.json({ anything: true }))
     const res = await app.fetch(new Request('http://localhost/health'))
