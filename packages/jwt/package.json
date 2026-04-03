@@ -37,7 +37,7 @@
     "build": "tsup && tsc -p tsconfig.build.json",
     "build:watch": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run build && bun run typecheck"
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "jose": "^6.2.2"

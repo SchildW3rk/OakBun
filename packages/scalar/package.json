@@ -39,7 +39,7 @@
     "build": "tsup && tsc -p tsconfig.build.json",
     "build:watch": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "bun run build && bun run typecheck"
+    "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
     "oakbun": ">=0.1.0"
