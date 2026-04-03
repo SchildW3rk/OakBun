@@ -1,0 +1,286 @@
+{
+  "version": "1",
+  "generated": "2026-04-03",
+  "pages": [
+    {
+      "title": "Installation",
+      "category": "getting-started",
+      "tags": ["install", "setup", "bun", "requirements"],
+      "related": ["Quick Start", "Project Structure"],
+      "path": "getting-started/01-installation.md"
+    },
+    {
+      "title": "Quick Start",
+      "category": "getting-started",
+      "tags": ["quickstart", "hello-world", "routes", "database"],
+      "related": ["Installation", "defineModule", "DB Plugin"],
+      "path": "getting-started/02-quick-start.md"
+    },
+    {
+      "title": "Project Structure",
+      "category": "getting-started",
+      "tags": ["structure", "layout", "monorepo", "conventions"],
+      "related": ["Installation", "defineModule", "defineTable"],
+      "path": "getting-started/03-project-structure.md"
+    },
+    {
+      "title": "createApp",
+      "category": "core",
+      "tags": ["app", "server", "listen", "close", "register"],
+      "related": ["defineModule", "definePlugin", "DB Plugin"],
+      "path": "core/01-create-app.md"
+    },
+    {
+      "title": "defineModule",
+      "category": "core",
+      "tags": ["module", "routes", "guards", "prefix", "hooks"],
+      "related": ["createApp", "definePlugin", "defineService"],
+      "path": "core/02-define-module.md"
+    },
+    {
+      "title": "defineResource",
+      "category": "core",
+      "tags": ["resource", "crud", "rest", "model"],
+      "related": ["defineModule", "defineModel", "defineTable"],
+      "path": "core/03-define-resource.md"
+    },
+    {
+      "title": "definePlugin",
+      "category": "core",
+      "tags": ["plugin", "extend", "context", "nav"],
+      "related": ["createApp", "defineModule", "Plugin System"],
+      "path": "core/04-define-plugin.md"
+    },
+    {
+      "title": "defineService",
+      "category": "core",
+      "tags": ["service", "dependency-injection", "singleton"],
+      "related": ["defineModule", "defineResource", "Cron Jobs"],
+      "path": "core/05-define-service.md"
+    },
+    {
+      "title": "defineModel",
+      "category": "core",
+      "tags": ["model", "orm", "crud", "query"],
+      "related": ["defineTable", "defineResource", "SelectBuilder"],
+      "path": "core/06-define-model.md"
+    },
+    {
+      "title": "defineGuard",
+      "category": "core",
+      "tags": ["guard", "auth", "middleware", "protection"],
+      "related": ["defineModule", "JWT Plugin", "Guards and Auth"],
+      "path": "core/07-define-guard.md"
+    },
+    {
+      "title": "defineCron",
+      "category": "core",
+      "tags": ["cron", "scheduler", "background", "os-cron"],
+      "related": ["defineModule", "defineService", "Cron Jobs"],
+      "path": "core/08-define-cron.md"
+    },
+    {
+      "title": "defineTable / column",
+      "category": "core",
+      "tags": ["table", "schema", "column", "types", "hooks"],
+      "related": ["defineModule", "SelectBuilder", "Migrations"],
+      "path": "core/09-define-table.md"
+    },
+    {
+      "title": "SQL Overview",
+      "category": "sql",
+      "tags": ["sql", "query", "builder", "fluent"],
+      "related": ["SelectBuilder", "Where Operators", "Migrations"],
+      "path": "sql/01-overview.md"
+    },
+    {
+      "title": "SelectBuilder",
+      "category": "sql",
+      "tags": ["select", "query", "where", "orderby", "limit"],
+      "related": ["Where Operators", "Join Builder", "Relation Loader"],
+      "path": "sql/02-select-builder.md"
+    },
+    {
+      "title": "Where Operators",
+      "category": "sql",
+      "tags": ["where", "filter", "operators", "conditions"],
+      "related": ["SelectBuilder", "SQL Overview"],
+      "path": "sql/03-where-operators.md"
+    },
+    {
+      "title": "Pagination",
+      "category": "sql",
+      "tags": ["pagination", "limit", "offset", "cursor"],
+      "related": ["SelectBuilder", "defineResource"],
+      "path": "sql/04-pagination.md"
+    },
+    {
+      "title": "Aggregation",
+      "category": "sql",
+      "tags": ["aggregate", "count", "sum", "avg", "min", "max", "groupby"],
+      "related": ["SelectBuilder", "SQL Overview"],
+      "path": "sql/05-aggregation.md"
+    },
+    {
+      "title": "Relation Loader",
+      "category": "sql",
+      "tags": ["relation", "batch", "n+1", "foreign-key"],
+      "related": ["SelectBuilder", "N+1 Detection", "SQL Overview"],
+      "path": "sql/06-relation-loader.md"
+    },
+    {
+      "title": "Raw SQL",
+      "category": "sql",
+      "tags": ["raw", "sql", "escape", "unsafe"],
+      "related": ["SelectBuilder", "SQL Overview"],
+      "path": "sql/07-raw-sql.md"
+    },
+    {
+      "title": "Join Builder",
+      "category": "sql",
+      "tags": ["join", "inner", "left", "right", "cross"],
+      "related": ["SelectBuilder", "Relation Loader", "SQL Overview"],
+      "path": "sql/08-join-builder.md"
+    },
+    {
+      "title": "Migrations",
+      "category": "sql",
+      "tags": ["migrations", "schema", "diff", "apply", "rollback"],
+      "related": ["defineTable", "Oak CLI", "DB Plugin"],
+      "path": "sql/09-migrations.md"
+    },
+    {
+      "title": "Query Logging",
+      "category": "sql",
+      "tags": ["logging", "query-log", "debug", "performance"],
+      "related": ["DB Plugin", "N+1 Detection", "Ctx Reference"],
+      "path": "sql/10-query-logging.md"
+    },
+    {
+      "title": "Plugin System",
+      "category": "plugins",
+      "tags": ["plugin", "extend", "context", "use"],
+      "related": ["definePlugin", "createApp", "defineModule"],
+      "path": "plugins/01-plugin-system.md"
+    },
+    {
+      "title": "JWT Plugin",
+      "category": "plugins",
+      "tags": ["jwt", "auth", "token", "bearer"],
+      "related": ["defineGuard", "Guards and Auth", "Auth Adapter"],
+      "path": "plugins/02-jwt-plugin.md"
+    },
+    {
+      "title": "Auth Adapter",
+      "category": "plugins",
+      "tags": ["auth", "better-auth", "oauth", "session"],
+      "related": ["JWT Plugin", "Guards and Auth"],
+      "path": "plugins/03-auth-adapter.md"
+    },
+    {
+      "title": "DB Plugin",
+      "category": "plugins",
+      "tags": ["db", "database", "adapter", "sqlite", "postgres", "mysql"],
+      "related": ["defineTable", "Migrations", "N+1 Detection"],
+      "path": "plugins/04-db-plugin.md"
+    },
+    {
+      "title": "WebSocket Plugin",
+      "category": "plugins",
+      "tags": ["websocket", "ws", "realtime", "upgrade"],
+      "related": ["defineModule", "createApp", "Plugin System"],
+      "path": "plugins/05-ws-plugin.md"
+    },
+    {
+      "title": "Rate Limit Plugin",
+      "category": "plugins",
+      "tags": ["rate-limit", "throttle", "protection"],
+      "related": ["Plugin System", "defineModule"],
+      "path": "plugins/06-rate-limit-plugin.md"
+    },
+    {
+      "title": "Compression Plugin",
+      "category": "plugins",
+      "tags": ["compression", "gzip", "brotli", "performance"],
+      "related": ["Plugin System", "defineModule"],
+      "path": "plugins/07-compression-plugin.md"
+    },
+    {
+      "title": "Secure Headers Plugin",
+      "category": "plugins",
+      "tags": ["security", "headers", "csp", "hsts"],
+      "related": ["Plugin System", "defineModule"],
+      "path": "plugins/08-secure-headers-plugin.md"
+    },
+    {
+      "title": "Error Handling",
+      "category": "guides",
+      "tags": ["error", "exception", "handler", "http-errors"],
+      "related": ["defineModule", "createApp", "Types Reference"],
+      "path": "guides/01-error-handling.md"
+    },
+    {
+      "title": "Guards and Auth",
+      "category": "guides",
+      "tags": ["guards", "auth", "jwt", "rbac", "protection"],
+      "related": ["defineGuard", "JWT Plugin", "Auth Adapter"],
+      "path": "guides/02-guards-and-auth.md"
+    },
+    {
+      "title": "Hooks & Events",
+      "category": "guides",
+      "tags": ["hooks", "events", "eventbus", "table-hooks"],
+      "related": ["defineTable", "defineModule", "DB Plugin"],
+      "path": "guides/03-hooks-and-events.md"
+    },
+    {
+      "title": "Audit Logging",
+      "category": "guides",
+      "tags": ["audit", "logging", "compliance", "history"],
+      "related": ["defineTable", "defineModule", "Hooks & Events"],
+      "path": "guides/04-audit-logging.md"
+    },
+    {
+      "title": "Server-Driven Navigation",
+      "category": "guides",
+      "tags": ["nav", "navigation", "server-driven", "plugin"],
+      "related": ["definePlugin", "Plugin System"],
+      "path": "guides/05-server-driven-nav.md"
+    },
+    {
+      "title": "N+1 Detection",
+      "category": "guides",
+      "tags": ["n+1", "performance", "query", "optimization"],
+      "related": ["Relation Loader", "Query Logging", "SelectBuilder"],
+      "path": "guides/06-n1-detection.md"
+    },
+    {
+      "title": "Cron Jobs",
+      "category": "guides",
+      "tags": ["cron", "scheduler", "background", "locking"],
+      "related": ["defineCron", "defineService", "defineModule"],
+      "path": "guides/07-cron-jobs.md"
+    },
+    {
+      "title": "Ctx Reference",
+      "category": "api",
+      "tags": ["ctx", "context", "request", "response", "types"],
+      "related": ["Types Reference", "defineModule", "Plugin System"],
+      "path": "api/01-ctx-reference.md"
+    },
+    {
+      "title": "Types Reference",
+      "category": "api",
+      "tags": ["types", "typescript", "inference", "generics"],
+      "related": ["Ctx Reference", "defineTable", "defineModule"],
+      "path": "api/02-types-reference.md"
+    },
+    {
+      "title": "Oak CLI",
+      "category": "cli",
+      "tags": ["cli", "migrate", "shell", "commands", "oak"],
+      "related": ["defineTable", "Migrations", "defineModule"],
+      "path": "cli/01-oak-cli.md"
+    }
+  ]
+}

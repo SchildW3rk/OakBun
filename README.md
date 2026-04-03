@@ -1,5 +1,9 @@
 # OakBun
 
+[![GitHub](https://img.shields.io/github/stars/SchildW3rk/OakBun?style=flat)](https://github.com/SchildW3rk/OakBun)
+[![npm](https://img.shields.io/npm/v/oakbun)](https://www.npmjs.com/package/oakbun)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 > Bun-native backend framework — No Magic, just code.
 
 ## Packages
@@ -44,6 +48,20 @@ bun install        # Dependencies installieren
 bun run build      # Alle Packages bauen
 bun test           # Tests ausführen
 ```
+
+## Documentation
+
+Full documentation is in [`/docs`](./docs).
+
+| Section | Description |
+|---|---|
+| [Getting Started](./docs/getting-started/01-installation.md) | Installation, quick start, project structure |
+| [Core API](./docs/core/01-create-app.md) | createApp, defineModule, defineTable, defineService, … |
+| [SQL](./docs/sql/01-overview.md) | SelectBuilder, joins, migrations, query logging |
+| [Plugins](./docs/plugins/01-plugin-system.md) | DB, JWT, Auth, WebSocket, rate limiting, … |
+| [Guides](./docs/guides/01-error-handling.md) | Error handling, auth, hooks, audit logging, cron jobs |
+| [API Reference](./docs/api/01-ctx-reference.md) | Ctx fields, exported types |
+| [CLI](./docs/cli/01-oak-cli.md) | `oak` commands |
 
 ## Contributing
 

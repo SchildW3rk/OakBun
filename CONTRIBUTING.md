@@ -16,7 +16,7 @@ OakBun uses [Changesets](https://github.com/changesets/changesets) for versionin
 
 ### What happens automatically:
 
-- The Gitea Action detects pending changesets on `main`
+- The GitHub Action detects pending changesets on `main`
 - It creates a "Version Packages" PR that bumps versions and updates CHANGELOGs
 - Merging that PR triggers `changeset publish`, which publishes all changed packages to npm
 

@@ -4,10 +4,10 @@
   "description": "JWT plugin for the OakBun framework.",
   "author": "René (SchildW3rk)",
   "license": "MIT",
-  "homepage": "https://oakbun.dev",
+  "homepage": "https://github.com/SchildW3rk/OakBun#readme",
   "repository": {
     "type": "git",
-    "url": "https://app-forge.dev/rene/oakbun"
+    "url": "https://github.com/SchildW3rk/OakBun"
   },
   "keywords": [
     "bun",
@@ -47,5 +47,8 @@
   },
   "devDependencies": {
     "oakbun": "workspace:*"
+  },
+  "bugs": {
+    "url": "https://github.com/SchildW3rk/OakBun/issues"
   }
 }
