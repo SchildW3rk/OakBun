@@ -326,14 +326,12 @@ describe('Multiple handlers on same event', () => {
 
 describe('Fire & forget — error safety', () => {
   test('handler that throws does not affect response status', async () => {
-    const orig = console.error
-    console.error = () => {}
     const def = defineEventHandler({ 'post.created': (_p) => { throw new Error('handler boom') } })
 
     const adapter = new SQLiteAdapter()
     await adapter.execute(toCreateTableSql(postsTable))
 
-    const app = createApp()
+    const app = createApp({ eventBus: new EventBus({ onError: () => {} }) })
       .plugin(dbPlugin(adapter))
       .events(def)
 
@@ -350,7 +348,6 @@ describe('Fire & forget — error safety', () => {
     // Response must still be 201 — handler error is swallowed
     expect(res.status).toBe(201)
     await new Promise((r) => setTimeout(r, 20))
-    console.error = orig
     // No assertion on the error itself — it's logged, not thrown
   })
 })
