@@ -2,7 +2,18 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "noEmit": false
+    "noEmit": false,
+    "paths": {
+      "oakbun": [
+        "../core/src/index.ts"
+      ],
+      "oakbun/*": [
+        "../core/src/*"
+      ]
+    }
   },
-  "include": ["src/**/*", "tests/**/*"]
+  "include": [
+    "src/**/*",
+    "tests/**/*"
+  ]
 }

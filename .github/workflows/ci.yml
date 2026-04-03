@@ -19,13 +19,8 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build all packages
-        run: bun run build
-
       - name: Typecheck all packages
         run: bun run typecheck
 
       - name: Run tests
-        run: |
-          set -o pipefail
-          bun test tests/ packages/jwt/tests/ packages/auth/tests/ packages/logger/tests/ 2>&1 | tee /tmp/test-output.txt
+        run: bun test tests/ packages/jwt/tests/ packages/auth/tests/ packages/logger/tests/ 2>&1

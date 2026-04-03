@@ -92,7 +92,7 @@ describe('ws() — route registration', () => {
     const schema = z.object({ text: z.string() })
     ws.route('/chat', {
       message:  schema,
-      handlers: { message(ctx) { ctx.ws.send(ctx.data.text) } },
+      handlers: { message(ctx) { ctx.ws.send((ctx.data as { text: string }).text) } },
     })
     const route = ws.getRoute('/chat')
     expect(route?.messageSchema).toBe(schema)
@@ -168,7 +168,7 @@ describe('ws() — live server integration', () => {
       message:  z.object({ msg: z.string() }),
       handlers: {
         message(ctx) {
-          ctx.ws.send(`got:${ctx.data.msg}`)
+          ctx.ws.send(`got:${(ctx.data as { msg: string }).msg}`)
         },
       },
     })
