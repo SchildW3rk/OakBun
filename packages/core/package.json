@@ -1,0 +1,54 @@
+{
+  "name": "oakbun",
+  "version": "0.1.0",
+  "description": "Bun-native backend framework — No Magic, just code.",
+  "author": "René (SchildW3rk)",
+  "license": "MIT",
+  "homepage": "https://oakbun.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://app-forge.dev/rene/oakbun"
+  },
+  "keywords": ["bun", "framework", "typescript", "backend", "api"],
+  "engines": { "bun": ">=1.1.0" },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "oak": "./dist/cli/bin.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./adapter/sqlite": {
+      "import": "./dist/adapter/sqlite.js",
+      "types": "./dist/adapter/sqlite.d.ts"
+    },
+    "./adapter/postgres": {
+      "import": "./dist/adapter/postgres.js",
+      "types": "./dist/adapter/postgres.d.ts"
+    },
+    "./adapter/mysql": {
+      "import": "./dist/adapter/mysql.js",
+      "types": "./dist/adapter/mysql.d.ts"
+    }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsup && tsc -p tsconfig.build.json",
+    "build:watch": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build && bun run typecheck"
+  },
+  "peerDependencies": {
+    "zod": "^3.0.0 || ^4.0.0"
+  },
+  "dependencies": {
+    "croner": "^10.0.1"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}

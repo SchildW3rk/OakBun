@@ -1,0 +1,22 @@
+{
+  "name": "veln-example-basic",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev":      "bun --watch src/index.ts",
+    "start":    "bun src/index.ts",
+    "ws":       "bun src/ws-client.ts",
+    "migrate":  "oak migrate:run",
+    "db:status": "oak migrate:status"
+  },
+  "dependencies": {
+    "oakbun": "workspace:*",
+    "@oakbun/ws": "workspace:*",
+    "@oakbun/jwt": "workspace:*",
+    "@oakbun/logger": "workspace:*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}

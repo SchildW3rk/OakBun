@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": false,
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist",
+    "paths": {
+      "oakbun": ["../core/src/index.ts"],
+      "oakbun/*": ["../core/src/*"]
+    }
+  },
+  "include": ["src/**/*"]
+}

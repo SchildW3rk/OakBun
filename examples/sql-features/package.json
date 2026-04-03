@@ -1,0 +1,16 @@
+{
+  "name": "veln-example-sql-features",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev":   "bun --watch src/index.ts",
+    "start": "bun src/index.ts"
+  },
+  "dependencies": {
+    "oakbun": "workspace:*",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}

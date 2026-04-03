@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Bun
+.bun/
+bun.lockb
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test outputs
+coverage/
+
+# Changesets (generated)
+# .changeset/ wird NICHT ignoriert — Changeset-Dateien gehören ins Repo
+
+# Temporary
+tmp/
+.tmp/
+
+# Lokale DBs nicht committen (Root + überall)
+*.db
+*.db-shm
+*.db-wal

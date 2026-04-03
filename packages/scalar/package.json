@@ -1,0 +1,47 @@
+{
+  "name": "@oakbun/scalar",
+  "version": "0.1.0",
+  "description": "Scalar API docs plugin for the OakBun framework.",
+  "author": "René (SchildW3rk)",
+  "license": "MIT",
+  "homepage": "https://oakbun.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://app-forge.dev/rene/oakbun"
+  },
+  "keywords": [
+    "bun",
+    "scalar",
+    "openapi",
+    "docs",
+    "typescript",
+    "backend",
+    "oakbun"
+  ],
+  "engines": {
+    "bun": ">=1.1.0"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup && tsc -p tsconfig.build.json",
+    "build:watch": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "bun run build && bun run typecheck"
+  },
+  "peerDependencies": {
+    "oakbun": ">=0.1.0"
+  }
+}
