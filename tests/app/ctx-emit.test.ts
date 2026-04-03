@@ -127,6 +127,8 @@ describe('ctx.emit() — multiple emits accumulate', () => {
 
 describe('ctx.emit() — subscriber error does not affect response', () => {
   test('throwing subscriber does not break the response', async () => {
+    const originalError = console.error
+    console.error = () => {}
     const app = createApp()
     app.on('bad.event', () => { throw new Error('subscriber fail') })
     app.get('/bad-sub', (ctx) => {
@@ -136,6 +138,7 @@ describe('ctx.emit() — subscriber error does not affect response', () => {
 
     const res = await app.fetch(new Request('http://localhost/bad-sub'))
     await new Promise((r) => setTimeout(r, 20))
+    console.error = originalError
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ ok: true })
   })

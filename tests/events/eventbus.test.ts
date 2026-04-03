@@ -31,10 +31,13 @@ describe('EventBus — on/_emit', () => {
 
   test('_emit() is fire & forget — does not throw when handler throws', () => {
     const bus = new EventBus()
+    const orig = console.error
+    console.error = () => {}
     bus.on('boom', () => { throw new Error('kaboom') })
 
     // Should not throw
     expect(() => bus._emit('boom', null, null)).not.toThrow()
+    console.error = orig
   })
 
   test('_emit() logs error when handler throws (mock console.error)', async () => {
@@ -139,8 +142,11 @@ describe('EventBus — _emit (internal API)', () => {
 
   test('_emit() ist fire & forget — wirft nicht', () => {
     const bus = new EventBus()
+    const orig = console.error
+    console.error = () => {}
     bus.on('err', () => { throw new Error('fail') })
     expect(() => bus._emit('err', null, null)).not.toThrow()
+    console.error = orig
   })
 
   test('_emit() für unbekanntes event — kein Fehler', () => {
