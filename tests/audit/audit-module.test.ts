@@ -221,8 +221,10 @@ describe('.audit() — error isolation', () => {
     const adapter = new SQLiteAdapter()
     await adapter.execute(toCreateTableSql(usersTable))
     // intentionally NOT creating the audit_audit_logs table — writes will fail
+    // no loggerPlugin here: the expected SQLiteError would be printed to stderr
+    // and counted as an error by the test runner
 
-    const app = createApp().plugin(loggerPlugin())
+    const app = createApp()
     app.plugin(dbPlugin(adapter, app.hooks))
 
     const mod = defineModule('/users')
