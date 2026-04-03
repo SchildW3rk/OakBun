@@ -22,6 +22,7 @@ async function setup() {
     trustedOrigins: [BASE_URL],
     database: createVelnDbAdapter(adapter),
     emailAndPassword: { enabled: true },
+    logger: { disabled: true },
   })
 
   const app = createApp()
