@@ -50,6 +50,8 @@ export interface AuditConfig<TCtx, TRow, S extends SchemaMap = BaseAuditSchema> 
   actor: (ctx: TCtx) => string | null | undefined
   /** Field names to replace with '[REDACTED]' in before/after snapshots. */
   redact?: (keyof TRow & string)[]
+  /** Called when an audit write fails. Defaults to console.error. */
+  onError?: (err: unknown) => void
 }
 
 // ── applyRedact — internal helper ───────────────────────────────────────────

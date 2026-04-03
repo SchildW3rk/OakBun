@@ -26,6 +26,7 @@ export function buildAuditHooks<T extends Record<string, unknown>, TCtx, S exten
   const { table, config } = decl
   const redactFields = (config.redact ?? []) as string[]
   const auditTable   = config.storeIn
+  const onError      = config.onError ?? ((err: unknown) => console.error('[audit] write failed:', err))
 
   // before-snapshot: WeakMap keyed on the patch object.
   // Each .update() call gets a fresh patch object — the WeakMap entry is
@@ -57,7 +58,7 @@ export function buildAuditHooks<T extends Record<string, unknown>, TCtx, S exten
         const actor  = config.actor(ctx as TCtx) ?? null
         await writeAudit('insert', actor, null, after)
       } catch (err) {
-        console.error('[audit] afterInsert failed:', err)
+        onError(err)
       }
     },
 
@@ -76,7 +77,7 @@ export function buildAuditHooks<T extends Record<string, unknown>, TCtx, S exten
         const actor      = config.actor(ctx as TCtx) ?? null
         await writeAudit('update', actor, beforeSnap, afterSnap)
       } catch (err) {
-        console.error('[audit] afterUpdate failed:', err)
+        onError(err)
       }
     },
 
@@ -86,7 +87,7 @@ export function buildAuditHooks<T extends Record<string, unknown>, TCtx, S exten
         const actor  = config.actor(ctx as TCtx) ?? null
         await writeAudit('delete', actor, before, null)
       } catch (err) {
-        console.error('[audit] afterDelete failed:', err)
+        onError(err)
       }
     },
   }

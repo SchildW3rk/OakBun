@@ -229,8 +229,9 @@ describe('.audit() — error isolation', () => {
 
     const mod = defineModule('/users')
       .audit(usersTable, {
-        storeIn: auditLogs,
-        actor:   (_ctx) => 'u-1',
+        storeIn:  auditLogs,
+        actor:    (_ctx) => 'u-1',
+        onError:  () => {},  // silence expected SQLiteError — no stderr, no bun error count
       })
       .post('/', async (ctx) => {
         const body = await ctx.req.json() as { name: string; email: string }
