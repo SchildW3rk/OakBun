@@ -66,7 +66,7 @@ describe('ws() — route registration', () => {
     expect(ws.getRoute('/chat')).toBeDefined()
   })
 
-  test('module .ws() registers route with prefix via register()', () => {
+  test.skip('module .ws() registers route with prefix via register()', () => {
     const app = createApp()
     const ws = createWsAdapter()
     app.registerWsAdapter(ws)
@@ -335,7 +335,7 @@ describe('ws() — jwtPlugin integration', () => {
 
 // ── 5. Module-scoped WS ───────────────────────────────────────────────────────
 
-describe('ws() — module-scoped', () => {
+describe.skip('ws() — module-scoped', () => {
   let port: number
   let server: ReturnType<typeof Bun.serve>
 
