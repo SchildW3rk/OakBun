@@ -191,6 +191,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   private readonly _cronJobs: Map<string, import('croner').Cron> = new Map()
   // Lock adapter — prevents duplicate execution across multiple instances
   private readonly _cronLock: CronLockAdapter
+  private readonly _onInternalError: (msg: string, err: unknown) => void
   // Optional WS adapter — registered via app.registerWsAdapter(). Null when @oakbun/ws is not used.
   private _wsAdapter: VelnWsAdapter | null = null
   // Optional auth adapter — set via createApp({ auth }). Null when auth is not configured.
@@ -203,7 +204,9 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     eventBus?: EventBusAdapter
     cronLock?: CronLockAdapter
     db?: { log?: { enabled?: boolean; n1Threshold?: number; logQueries?: boolean } }
+    onInternalError?: (msg: string, err: unknown) => void
   } = {}) {
+    this._onInternalError = opts.onInternalError ?? ((msg, err) => console.error(msg, err))
     this.eventBus = opts.eventBus ?? new InMemoryEventBus()
     this._cronLock = opts.cronLock ?? new NoOpCronLockAdapter()
     this.hooks = new HookExecutor()
@@ -1201,7 +1204,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
         const body: unknown = await response.clone().json()
         const result = matchedRoute.schema!.response!.safeParse(body)
         if (!result.success) {
-          console.error('[veln] Response validation failed:', result.error.issues)
+          this._onInternalError('[veln] Response validation failed:', result.error.issues)
           const errRes = new Response('Internal Server Error', { status: 500 })
           return this._runOnResponse(baseCtx, errRes, mod, undefined)
         }
@@ -1376,7 +1379,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
           await plugin.teardown()
         } catch (err) {
           // Log but don't rethrow — other teardowns must still run
-          console.error(`[veln] teardown failed for plugin "${plugin.name}":`, err)
+          this._onInternalError(`[veln] teardown failed for plugin "${plugin.name}":`, err)
         }
       }
     }
@@ -1520,7 +1523,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
           // If install returns a Promise, ignore it — sync plugins (dbPlugin) work fine here
           if (result && typeof (result as any).then === 'function') {
             (result as Promise<void>).catch((err) =>
-              console.error('[veln] Plugin install error during listen():', err),
+              this._onInternalError('[veln] Plugin install error during listen():', err),
             )
           }
         }

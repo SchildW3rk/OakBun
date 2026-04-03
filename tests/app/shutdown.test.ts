@@ -62,7 +62,7 @@ describe('app.close() — graceful shutdown', () => {
       teardown: async () => { order.push('healthy') },
     }
 
-    const app = createApp()
+    const app = createApp({ onInternalError: () => {} })
     app.plugin(healthy as Plugin<BaseCtx, object>)
     app.plugin(failing as Plugin<BaseCtx, object>)
 
