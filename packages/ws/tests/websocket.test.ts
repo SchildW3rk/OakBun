@@ -3,7 +3,7 @@ import { createApp } from '../../core/src/app/index'
 import { defineModule } from '../../core/src/app/module'
 import { jwtPlugin, signJwt } from '../../jwt/src/index'
 import { createWsAdapter } from '../src/index'
-import '@veln/ws'  // side-effect: enables defineModule().ws()
+import '@oakbun/ws'  // side-effect: enables defineModule().ws()
 import { z } from 'zod'
 
 const SECRET = 'ws-test-secret-for-veln-ok!!!!!!'
