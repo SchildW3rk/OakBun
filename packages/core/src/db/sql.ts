@@ -242,6 +242,46 @@ export function buildInsert(
 }
 
 /**
+ * Build a multi-row INSERT statement.
+ * INSERT INTO "table" ("col1", "col2") VALUES (?, ?), (?, ?) RETURNING *
+ *
+ * Column order is derived from rows[0] — all subsequent rows must have the same keys.
+ * Pass returning: false for databases that do not support RETURNING (MySQL).
+ * Throws if rows is empty or any row contains undefined values.
+ */
+export function buildInsertMany(
+  tableName: string,
+  rows: Record<string, BindingValue>[],
+  returning = true,
+): { sql: string; params: BindingValue[] } {
+  if (rows.length === 0) {
+    throw new Error('insertMany: rows array must not be empty')
+  }
+
+  const columns = Object.keys(rows[0]!)
+  const quotedCols = columns.map((c) => `"${c}"`).join(', ')
+  const params: BindingValue[] = []
+  const valueClauses: string[] = []
+
+  for (const row of rows) {
+    const placeholders: string[] = []
+    for (const col of columns) {
+      const val = row[col]
+      if (val === undefined) {
+        throw new Error(`insertMany: column "${col}" has undefined value — apply defaults before calling buildInsertMany`)
+      }
+      params.push(val)
+      placeholders.push('?')
+    }
+    valueClauses.push(`(${placeholders.join(', ')})`)
+  }
+
+  const returning_clause = returning ? ' RETURNING *' : ''
+  const sql = `INSERT INTO "${tableName}" (${quotedCols}) VALUES ${valueClauses.join(', ')}${returning_clause}`
+  return { sql, params }
+}
+
+/**
  * Build an UPDATE statement.
  * UPDATE "table" SET "col1" = ?, "col2" = ? WHERE "pk" = ?
  * The pk param is always last in params.

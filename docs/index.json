@@ -157,6 +157,13 @@
       "path": "sql/10-query-logging.md"
     },
     {
+      "title": "Batch Operations",
+      "category": "sql",
+      "tags": ["batch", "insertMany", "updateMany", "bulk", "performance"],
+      "related": ["SelectBuilder", "Relation Loader", "Query Logging"],
+      "path": "sql/11-batch-operations.md"
+    },
+    {
       "title": "Plugin System",
       "category": "plugins",
       "tags": ["plugin", "extend", "context", "use"],

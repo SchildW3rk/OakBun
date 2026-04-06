@@ -1,9 +1,9 @@
 import type { VelnAdapter, BindingValue, QueryLogEntry } from '../adapter/types'
-import type { SchemaMap, TableDef, InferInsert } from '../schema/table'
+import type { SchemaMap, TableDef, InferInsert, InferUpdate } from '../schema/table'
 import type { HookExecutor } from '../hooks/executor'
 import { RequestEventQueue } from '../events/index'
 import { ValidationError } from '../app/types'
-import { buildInsert, buildUpdate, buildDelete, buildSelect, buildJoinSelect, buildWhere, buildSelectListFromOptions, deserializeRow } from './sql'
+import { buildInsert, buildInsertMany, buildUpdate, buildDelete, buildSelect, buildJoinSelect, buildWhere, buildSelectListFromOptions, deserializeRow } from './sql'
 import type { JoinClause, SelectOptions, WhereInput, SqlDialect, AggregateClause } from './sql'
 
 // ── QueryLog — per-request query accumulator ──────────────────────────────
@@ -72,6 +72,7 @@ export class BoundVelnDB {
     // increments the log's counters. Never mutates adapter.onQuery — avoids shared-state
     // races when multiple requests run concurrently on the same adapter instance.
     queryLog?: QueryLog,
+    private readonly dialect: SqlDialect = 'sqlite',
   ) {
     if (queryLog) {
       const log = queryLog
@@ -126,7 +127,7 @@ export class BoundVelnDB {
   }
 
   into<T, S extends SchemaMap>(table: TableDef<T, S>): InsertBuilder<T, S> {
-    return new InsertBuilder<T, S>(this.adapter, this.hooks, this.ctx, this.queue, table)
+    return new InsertBuilder<T, S>(this.adapter, this.hooks, this.ctx, this.queue, table, this.dialect)
   }
 
   /**
@@ -624,6 +625,78 @@ export class SelectBuilder<T, S extends SchemaMap> {
     return result
   }
 
+  /**
+   * Update multiple rows atomically inside a single transaction.
+   * Each row must include the primary key. beforeUpdate and afterUpdate hooks
+   * run per row. If any row fails, the entire transaction rolls back.
+   *
+   * @example
+   * const updated = await db.from(usersTable).updateMany([
+   *   { id: 1, name: 'Alice Updated' },
+   *   { id: 2, role: 'admin' },
+   * ])
+   */
+  async updateMany(rows: InferUpdate<S>[]): Promise<T[]> {
+    if (rows.length === 0) return []
+
+    const pk = this.table.primaryKey
+
+    const results: T[] = await this.adapter.transaction(async (txAdapter) => {
+      // Build a transaction-scoped SelectBuilder that uses the tx adapter
+      const txQueue = new RequestEventQueue()
+      const inner: T[] = []
+
+      for (const row of rows) {
+        const pkValue = (row as Record<string, unknown>)[pk as string]
+        if (pkValue === undefined || pkValue === null) {
+          throw new Error(
+            `updateMany: row is missing primary key "${pk as string}" — every row must include the PK`,
+          )
+        }
+
+        // Load current row via the tx adapter (so read is within the same TX)
+        const selectSql = `SELECT * FROM "${this.table.name}" WHERE "${pk as string}" = ?`
+        const currentRows = await txAdapter.query<Record<string, unknown>>(selectSql, [pkValue as BindingValue])
+        if (currentRows.length === 0) {
+          throw new Error(`updateMany: record with ${pk as string}=${String(pkValue)} not found`)
+        }
+        const current = deserializeRow(this.table, currentRows[0]!)
+
+        // Extract patch — everything except the PK
+        const { [pk as string]: _pk, ...patchWithoutPk } = row as Record<string, unknown>
+        const patch = patchWithoutPk as Partial<T>
+
+        // Run beforeUpdate hooks (may transform patch)
+        const finalPatch = await this.hooks.runBeforeUpdate(this.table, this.ctx, current, patch)
+
+        // Execute UPDATE
+        const { sql, params } = buildUpdate(
+          this.table.name,
+          finalPatch as Record<string, unknown>,
+          pk,
+          pkValue as BindingValue,
+        )
+        await txAdapter.execute(sql, params)
+
+        // Construct updated result
+        const updatedRow: Record<string, unknown> = {
+          ...(current as Record<string, unknown>),
+          ...(finalPatch as Record<string, unknown>),
+        }
+        const result = deserializeRow(this.table, updatedRow)
+
+        // Run afterUpdate hooks — collect into txQueue
+        await this.hooks.runAfterUpdate(this.table, this.ctx, result, current, txQueue)
+
+        inner.push(result)
+      }
+
+      return inner
+    })
+
+    return results
+  }
+
   async delete(): Promise<T> {
     const hasConditions = !(
       Object.keys(this.conditions).length === 0 && this._rawWhere.length === 0
@@ -663,6 +736,7 @@ export class InsertBuilder<T, S extends SchemaMap> {
     private readonly ctx: unknown,
     private readonly queue: RequestEventQueue | undefined,
     private readonly table: TableDef<T, S>,
+    private readonly dialect: SqlDialect = 'sqlite',
   ) {}
 
   async insert(data: InferInsert<S>): Promise<T> {
@@ -702,7 +776,73 @@ export class InsertBuilder<T, S extends SchemaMap> {
     return result
   }
 
-  /** Serialize values for SQLite storage. Date → ISO string. */
+  /**
+   * Insert multiple rows in a single SQL statement.
+   * beforeInsert and afterInsert hooks run per row.
+   * Defaults (defaultFn / defaultValue) are applied per row.
+   *
+   * MySQL is not yet supported (no RETURNING *) — throws an informative error.
+   *
+   * @example
+   * const users = await db.into(usersTable).insertMany([
+   *   { name: 'Alice', email: 'alice@example.com' },
+   *   { name: 'Bob',   email: 'bob@example.com' },
+   * ])
+   */
+  async insertMany(data: InferInsert<S>[]): Promise<T[]> {
+    if (data.length === 0) return []
+
+    if (this.dialect === 'mysql') {
+      throw new Error(
+        'insertMany is not yet supported for MySQL — MySQL does not support RETURNING *. ' +
+        'Use individual insert() calls inside a transaction() instead.',
+      )
+    }
+
+    // Phase 1: run hooks + apply defaults + serialize — all before touching the adapter
+    const serializedRows: Record<string, BindingValue>[] = []
+
+    for (const row of data) {
+      // a. beforeInsert hooks (may transform data)
+      let processed: Partial<T> = await this.hooks.runBeforeInsert(
+        this.table,
+        this.ctx,
+        { ...row } as Partial<T>,
+      )
+
+      // b. Apply defaultFns and defaultValues for unset fields
+      for (const [field, col] of Object.entries(this.table.schema)) {
+        if (col.def.primaryKey && col.def.autoIncrement) continue
+        if ((processed as Record<string, unknown>)[field] === undefined) {
+          if (col.def.defaultFn !== undefined) {
+            ;(processed as Record<string, unknown>)[field] = col.def.defaultFn()
+          } else if (col.def.defaultValue !== undefined) {
+            ;(processed as Record<string, unknown>)[field] = col.def.defaultValue
+          }
+        }
+      }
+
+      // c. Serialize (Date → ISO string), cast to BindingValue[] — undefined already removed
+      const serialized = this._serializeForInsert(processed as Record<string, unknown>)
+      serializedRows.push(serialized as Record<string, BindingValue>)
+    }
+
+    // Phase 2: single INSERT … VALUES (…), (…) RETURNING *
+    const { sql, params } = buildInsertMany(this.table.name, serializedRows, true)
+    const rawRows = await this.adapter.query<Record<string, unknown>>(sql, params)
+
+    // Phase 3: deserialize results + run afterInsert hooks per row
+    const results: T[] = []
+    for (const rawRow of rawRows) {
+      const deserialized = deserializeRow(this.table, rawRow)
+      await this.hooks.runAfterInsert(this.table, this.ctx, deserialized, {}, this.queue)
+      results.push(deserialized)
+    }
+
+    return results
+  }
+
+  /** Serialize values for storage. Date → ISO string. Drops undefined values. */
   private _serializeForInsert(data: Record<string, unknown>): Record<string, unknown> {
     const result: Record<string, unknown> = {}
     for (const [key, val] of Object.entries(data)) {

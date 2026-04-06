@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test'
-import { buildWhere, buildInsert, buildUpdate, buildDelete, buildSelect } from '../../packages/core/src/db/sql'
+import { buildWhere, buildInsert, buildInsertMany, buildUpdate, buildDelete, buildSelect } from '../../packages/core/src/db/sql'
 
 // ── buildWhere ─────────────────────────────────────────────────────────────
 
@@ -71,6 +71,65 @@ describe('buildInsert', () => {
   test('returning: true (explicit) — appends RETURNING *', () => {
     const { sql } = buildInsert('users', { name: 'Alice' }, true)
     expect(sql).toContain('RETURNING *')
+  })
+})
+
+// ── buildInsertMany ────────────────────────────────────────────────────────
+
+describe('buildInsertMany', () => {
+  // ── Happy Path ──────────────────────────────────────────────────────────
+
+  test('1 row — correct SQL + params', () => {
+    const { sql, params } = buildInsertMany('users', [{ name: 'Alice', email: 'alice@example.com' }])
+    expect(sql).toBe('INSERT INTO "users" ("name", "email") VALUES (?, ?) RETURNING *')
+    expect(params).toEqual(['Alice', 'alice@example.com'])
+  })
+
+  test('3 rows — VALUES clause has 3 groups, params are flat and in order', () => {
+    const { sql, params } = buildInsertMany('users', [
+      { name: 'Alice', email: 'a@example.com' },
+      { name: 'Bob',   email: 'b@example.com' },
+      { name: 'Carol', email: 'c@example.com' },
+    ])
+    expect(sql).toBe(
+      'INSERT INTO "users" ("name", "email") VALUES (?, ?), (?, ?), (?, ?) RETURNING *',
+    )
+    expect(params).toEqual(['Alice', 'a@example.com', 'Bob', 'b@example.com', 'Carol', 'c@example.com'])
+  })
+
+  test('column order follows rows[0] key order', () => {
+    const { sql } = buildInsertMany('users', [{ email: 'x@example.com', name: 'X' }])
+    // email comes before name — not alphabetical, follows insertion order
+    expect(sql).toContain('"email", "name"')
+  })
+
+  test('returning: false — no RETURNING clause', () => {
+    const { sql } = buildInsertMany('users', [{ name: 'Alice' }], false)
+    expect(sql).toBe('INSERT INTO "users" ("name") VALUES (?)')
+    expect(sql).not.toContain('RETURNING')
+  })
+
+  test('null values are kept in params', () => {
+    const { sql, params } = buildInsertMany('users', [{ name: 'Alice', deletedAt: null }])
+    expect(sql).toContain('VALUES (?, ?)')
+    expect(params).toContain(null)
+  })
+
+  test('numeric and boolean values are valid params', () => {
+    const { params } = buildInsertMany('scores', [{ count: 0, active: false }])
+    expect(params).toEqual([0, false])
+  })
+
+  // ── Unhappy Path ────────────────────────────────────────────────────────
+
+  test('throws when rows is empty', () => {
+    expect(() => buildInsertMany('users', [])).toThrow('insertMany')
+  })
+
+  test('throws when a row contains undefined value', () => {
+    expect(() =>
+      buildInsertMany('users', [{ name: undefined as unknown as string }]),
+    ).toThrow(/"name"/)
   })
 })
 
