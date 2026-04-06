@@ -164,6 +164,13 @@
       "path": "sql/11-batch-operations.md"
     },
     {
+      "title": "Relations",
+      "category": "sql",
+      "tags": ["relations", "belongsTo", "hasMany", "manyToMany", "schema", "metadata"],
+      "related": ["Relation Loader", "Batch Operations", "SelectBuilder"],
+      "path": "sql/12-relations.md"
+    },
+    {
       "title": "Plugin System",
       "category": "plugins",
       "tags": ["plugin", "extend", "context", "use"],

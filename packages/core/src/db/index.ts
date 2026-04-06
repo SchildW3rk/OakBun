@@ -1,5 +1,5 @@
 import type { VelnAdapter, BindingValue, QueryLogEntry } from '../adapter/types'
-import type { SchemaMap, TableDef, InferInsert, InferUpdate } from '../schema/table'
+import type { SchemaMap, TableDef, InferInsert, InferUpdate, RelationMeta } from '../schema/table'
 import type { HookExecutor } from '../hooks/executor'
 import { RequestEventQueue } from '../events/index'
 import { ValidationError } from '../app/types'
@@ -135,13 +135,16 @@ export class BoundVelnDB {
    * Returns a Map keyed by the foreign-key value; each entry is an array of
    * matching child rows (for one-to-many relations).
    *
-   * @example
-   * const posts = await db.from(postsTable).select()
+   * Two call forms:
+   *
+   * @example — explicit (original)
    * const authorMap = await db.loadRelation(posts, 'authorId', usersTable, 'id')
-   * // → SELECT * FROM "users" WHERE "id" IN (1, 2, 3)
-   * const withAuthors = posts.map(p => ({ ...p, author: authorMap.get(p.authorId)?.[0] ?? null }))
+   *
+   * @example — name-based (reads relation metadata declared on the table)
+   * const authorMap = await db.loadRelation(posts, 'author', postsTable)
    */
-  async loadRelation<
+  // Overload 1 — explicit, original signature (unchanged)
+  loadRelation<
     TParent extends Record<string, unknown>,
     TChild,
     TFk extends keyof TParent & string,
@@ -151,7 +154,38 @@ export class BoundVelnDB {
     foreignKey: TFk,
     childTable: TableDef<TChild>,
     primaryKey: TPk,
-  ): Promise<Map<TParent[TFk], TChild[]>> {
+  ): Promise<Map<TParent[TFk], TChild[]>>
+  // Overload 2 — name-based, reads from sourceTable.relations
+  loadRelation<TParent extends Record<string, unknown>>(
+    parents:      TParent[],
+    relationName: string,
+    sourceTable:  TableDef<unknown>,
+  ): Promise<Map<unknown, unknown>>
+  // Implementation
+  async loadRelation<
+    TParent extends Record<string, unknown>,
+    TChild,
+    TFk extends keyof TParent & string,
+    TPk extends keyof TChild & string,
+  >(
+    parents:            TParent[],
+    keyOrRelationName:  TFk | string,
+    tableOrSource:      TableDef<TChild> | TableDef<unknown>,
+    primaryKey?:        TPk,
+  ): Promise<Map<unknown, unknown>> {
+    // Name-based path: no primaryKey arg
+    if (primaryKey === undefined) {
+      return this._loadRelationByName(
+        parents,
+        keyOrRelationName,
+        tableOrSource as TableDef<unknown>,
+        'many',
+      )
+    }
+
+    // Explicit path — original behaviour
+    const foreignKey = keyOrRelationName as TFk
+    const childTable = tableOrSource as TableDef<TChild>
     const result = new Map<TParent[TFk], TChild[]>()
     if (parents.length === 0) return result
 
@@ -161,7 +195,6 @@ export class BoundVelnDB {
       .select()
 
     for (const child of children) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const key = child[primaryKey] as unknown as TParent[TFk]
       const group = result.get(key)
       if (group) {
@@ -177,11 +210,16 @@ export class BoundVelnDB {
    * Convenience variant of loadRelation for belongs-to (many-to-one) relations.
    * Returns Map<fkValue, TChild> — single child per key instead of an array.
    *
-   * @example
+   * Two call forms:
+   *
+   * @example — explicit (original)
    * const authorMap = await db.loadRelationOne(posts, 'authorId', usersTable, 'id')
-   * const author = authorMap.get(post.authorId) ?? null
+   *
+   * @example — name-based
+   * const authorMap = await db.loadRelationOne(posts, 'author', postsTable)
    */
-  async loadRelationOne<
+  // Overload 1 — explicit
+  loadRelationOne<
     TParent extends Record<string, unknown>,
     TChild,
     TFk extends keyof TParent & string,
@@ -191,7 +229,38 @@ export class BoundVelnDB {
     foreignKey: TFk,
     childTable: TableDef<TChild>,
     primaryKey: TPk,
-  ): Promise<Map<TParent[TFk], TChild>> {
+  ): Promise<Map<TParent[TFk], TChild>>
+  // Overload 2 — name-based
+  loadRelationOne<TParent extends Record<string, unknown>>(
+    parents:      TParent[],
+    relationName: string,
+    sourceTable:  TableDef<unknown>,
+  ): Promise<Map<unknown, unknown>>
+  // Implementation
+  async loadRelationOne<
+    TParent extends Record<string, unknown>,
+    TChild,
+    TFk extends keyof TParent & string,
+    TPk extends keyof TChild & string,
+  >(
+    parents:            TParent[],
+    keyOrRelationName:  TFk | string,
+    tableOrSource:      TableDef<TChild> | TableDef<unknown>,
+    primaryKey?:        TPk,
+  ): Promise<Map<unknown, unknown>> {
+    // Name-based path
+    if (primaryKey === undefined) {
+      return this._loadRelationByName(
+        parents,
+        keyOrRelationName,
+        tableOrSource as TableDef<unknown>,
+        'one',
+      )
+    }
+
+    // Explicit path — original behaviour
+    const foreignKey = keyOrRelationName as TFk
+    const childTable = tableOrSource as TableDef<TChild>
     const result = new Map<TParent[TFk], TChild>()
     if (parents.length === 0) return result
 
@@ -201,8 +270,86 @@ export class BoundVelnDB {
       .select()
 
     for (const child of children) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       result.set(child[primaryKey] as unknown as TParent[TFk], child)
+    }
+    return result
+  }
+
+  /**
+   * Shared implementation for name-based loadRelation / loadRelationOne.
+   * Reads RelationMeta from sourceTable.relations, validates the kind,
+   * and delegates to the explicit overload.
+   */
+  private async _loadRelationByName(
+    parents:       Record<string, unknown>[],
+    relationName:  string,
+    sourceTable:   TableDef<unknown>,
+    mode:          'many' | 'one',
+  ): Promise<Map<unknown, unknown>> {
+    const rel = sourceTable.relations[relationName] as RelationMeta | undefined
+
+    if (rel === undefined) {
+      const available = Object.keys(sourceTable.relations).join(', ') || '(none)'
+      throw new Error(
+        `Relation '${relationName}' is not defined on table '${sourceTable.name}'. ` +
+        `Available relations: ${available}`,
+      )
+    }
+
+    if (rel.kind === 'manyToMany') {
+      throw new Error(
+        `manyToMany relations are not yet supported in loadRelation. ` +
+        `Use a manual JOIN for relation '${relationName}' on table '${sourceTable.name}'.`,
+      )
+    }
+
+    if (mode === 'one' && rel.kind === 'hasMany') {
+      throw new Error(
+        `loadRelationOne cannot be used with hasMany relation '${relationName}' on table '${sourceTable.name}'. ` +
+        `Use loadRelation to get an array of results.`,
+      )
+    }
+
+    const foreignTable = rel.getTable()
+    const pk = foreignTable.primaryKey as string
+
+    if (rel.kind === 'belongsTo') {
+      // FK is on the parent (source) table; PK is on the foreign table
+      if (mode === 'one') {
+        return this.loadRelationOne(
+          parents,
+          rel.foreignKey as keyof typeof parents[0] & string,
+          foreignTable,
+          pk as keyof typeof foreignTable extends never ? never : string,
+        )
+      }
+      return this.loadRelation(
+        parents,
+        rel.foreignKey as keyof typeof parents[0] & string,
+        foreignTable,
+        pk as keyof typeof foreignTable extends never ? never : string,
+      )
+    }
+
+    // hasMany: FK is on the foreign table; we group by FK value
+    // parents is keyed by their PK, foreign rows have rel.foreignKey pointing back
+    const parentPk = sourceTable.primaryKey as string
+    const result = new Map<unknown, unknown[]>()
+    if (parents.length === 0) return result
+
+    const ids = [...new Set(parents.map((p) => p[parentPk]))]
+    const children = await this.from(foreignTable)
+      .where({ [rel.foreignKey]: { op: 'IN', value: ids } } as WhereInput<typeof foreignTable>)
+      .select()
+
+    for (const child of children as Record<string, unknown>[]) {
+      const key = child[rel.foreignKey]
+      const group = result.get(key)
+      if (group) {
+        group.push(child)
+      } else {
+        result.set(key, [child])
+      }
     }
     return result
   }

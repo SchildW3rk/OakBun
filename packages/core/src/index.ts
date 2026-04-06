@@ -17,6 +17,7 @@ export type {
   SchemaMap, InferRow, InferInsert, InferUpdate, InferTable,
   TableDef, TableHookHandlers,
   TableEventMap, InferTableEvents,
+  RelationMeta, RelationKind, RelationsMap,
 }                                                 from './schema/table'
 export { defineAuditTable }                       from './schema/audit'
 export type { AuditTableDef, AuditLog, AuditConfig } from './schema/audit'
