@@ -3,10 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev":      "bun --watch src/index.ts",
-    "start":    "bun src/index.ts",
-    "ws":       "bun src/ws-client.ts",
-    "migrate":  "oak migrate:run",
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "ws": "bun src/ws-client.ts",
+    "migrate": "oak migrate:run",
     "db:status": "oak migrate:status"
   },
   "dependencies": {

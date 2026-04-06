@@ -1,6 +1,6 @@
 {
   "name": "@oakbun/ws",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "WebSocket plugin for the OakBun framework.",
   "author": "René (SchildW3rk)",
   "license": "MIT",
@@ -41,7 +41,7 @@
     "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
-    "oakbun": ">=0.1.0",
+    "oakbun": ">=0.1.1",
     "zod": "^3.0.0 || ^4.0.0"
   },
   "devDependencies": {
