@@ -18,6 +18,8 @@ export type {
   TableDef, TableHookHandlers,
   TableEventMap, InferTableEvents,
   RelationMeta, RelationKind, RelationsMap,
+  BelongsToRelation, HasManyRelation,
+  InferRelationResult, WithRelations,
 }                                                 from './schema/table'
 export { defineAuditTable }                       from './schema/audit'
 export type { AuditTableDef, AuditLog, AuditConfig } from './schema/audit'

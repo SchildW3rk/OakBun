@@ -107,6 +107,62 @@ const postsTable = defineTable('posts', { ... })
   .build()
 ```
 
+## Eager loading via `.with()`
+
+Load relations inline — one additional `IN` query per relation, never N+1.
+
+```ts
+// belongsTo — single entity per row
+const posts = await ctx.db.from(postsTable).with({ author: true }).select()
+posts[0].author  // → User | null  (fully typed)
+posts[0].title   // → string
+
+// hasMany — array per row
+const posts = await ctx.db.from(postsTable).with({ comments: true }).select()
+posts[0].comments  // → Comment[]
+
+// Multiple relations in one call
+const posts = await ctx.db.from(postsTable)
+  .with({ author: true, comments: true })
+  .select()
+```
+
+`.with()` is fully composable — combine freely with `.where()`, `.limit()`, `.orderBy()`, etc.
+
+```ts
+const posts = await ctx.db.from(postsTable)
+  .where({ authorId: 1 })
+  .with({ author: true, comments: true })
+  .orderBy('id', 'DESC')
+  .limit(10)
+  .select()
+```
+
+### Query count
+
+| Relations loaded | Queries issued |
+|-----------------|---------------|
+| 0 | 1 (main) |
+| 1 | 2 (main + 1 IN) |
+| N | N+1 (main + N IN) |
+
+### Return type
+
+`.with()` narrows the return type using `WithRelations<T, TTable, Keys>`:
+
+```ts
+type PostWithAuthor = WithRelations<Post, typeof postsTable, 'author'>
+// → Post & { author: User | null }
+
+type PostFull = WithRelations<Post, typeof postsTable, 'author' | 'comments'>
+// → Post & { author: User | null; comments: Comment[] }
+```
+
+### Limitations
+
+- `manyToMany` is not yet supported — use `loadRelation` with a manual `JOIN`.
+- Only top-level relations; nested eager loading is not supported.
+
 ## See Also
 
 - [Relation Loader](./06-relation-loader.md)

@@ -92,18 +92,16 @@ export type RelationKind = 'belongsTo' | 'hasMany' | 'manyToMany'
 
 /**
  * Metadata for a single declared relation.
- *
- * - `belongsTo`: FK lives on this table  (e.g. posts.authorId → users.id)
- * - `hasMany`:   FK lives on foreign table (e.g. users.id ← posts.authorId)
- * - `manyToMany`: join via pivot table
+ * TForeign captures the foreign table's row type so that WithRelations can
+ * produce concrete types (User, Post[]) rather than unknown.
  *
  * `getTable` is a lazy getter to allow circular references between tables.
  */
-export interface RelationMeta {
+export interface RelationMeta<TForeign = unknown> {
   kind:       RelationKind
   name:       string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getTable:   () => TableDef<any, any, any>
+  getTable:   () => TableDef<TForeign, any, any>
   /** FK column name — on this table for belongsTo, on foreign table for hasMany */
   foreignKey: string
   /** manyToMany only */
@@ -116,9 +114,59 @@ export interface RelationMeta {
 }
 
 /** All declared relations on a table, keyed by relation name. */
-export type RelationsMap = Record<string, RelationMeta>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type RelationsMap = Record<string, RelationMeta<any>>
 
-export interface TableDef<T, S extends SchemaMap = SchemaMap, TEvents extends TableEventMap = TableEventMap> {
+// ── Eager-loading types ────────────────────────────────────────────────────
+
+// Typed relation interfaces — one per kind.
+// WithRelations indexes into these to get a concrete type per relation name.
+// This avoids deferred conditional types (R['kind'] extends 'belongsTo') which
+// TypeScript cannot evaluate when R is still a generic parameter.
+
+export interface BelongsToRelation<TForeign> extends RelationMeta<TForeign> {
+  kind: 'belongsTo'
+}
+
+export interface HasManyRelation<TForeign> extends RelationMeta<TForeign> {
+  kind: 'hasMany'
+}
+
+/**
+ * Derives the result type of a single loaded relation.
+ * - belongsTo → TForeign | null
+ * - hasMany   → TForeign[]
+ * - manyToMany → never (not supported in Spec B)
+ */
+export type InferRelationResult<R> =
+  R extends BelongsToRelation<infer TForeign>
+    ? TForeign | null
+    : R extends HasManyRelation<infer TForeign>
+      ? TForeign[]
+      : never
+
+/**
+ * Merges a row type T with the requested relations.
+ * Keys must be keys of the table's relations map.
+ *
+ * @example
+ * type PostWithAuthor = WithRelations<Post, typeof postsTable, 'author'>
+ * // → Post & { author: User | null }
+ */
+export type WithRelations<
+  T,
+  TTable extends { relations: RelationsMap },
+  Keys extends keyof TTable['relations'] & string,
+> = T & {
+  [K in Keys]: InferRelationResult<TTable['relations'][K]>
+}
+
+export interface TableDef<
+  T,
+  S extends SchemaMap = SchemaMap,
+  TEvents extends TableEventMap = TableEventMap,
+  TRelations extends RelationsMap = RelationsMap,
+> {
   readonly name: string
   readonly schema: S
   readonly primaryKey: keyof T & string
@@ -128,11 +176,16 @@ export interface TableDef<T, S extends SchemaMap = SchemaMap, TEvents extends Ta
   // Storing it as a concrete generic parameter (TMap) lets onEvent() index it
   // directly as TMap[K] without TypeScript deferring the conditional InferTableEvents.
   readonly _eventMap: InferTableEvents<T, TEvents>
-  /** Declared relations — empty object when none are declared. */
-  readonly relations: RelationsMap
+  /** Declared relations — concrete typed map so WithRelations can infer foreign types. */
+  readonly relations: TRelations
 }
 
-export class TableBuilder<T, S extends SchemaMap, TEvents extends TableEventMap = Record<string, never>> {
+export class TableBuilder<
+  T,
+  S extends SchemaMap,
+  TEvents extends TableEventMap = Record<string, never>,
+  TRelations extends RelationsMap = Record<string, never>,
+> {
   private readonly _hooks: TableHookHandlers<T>[] = []
   private _events: TableEventMap = {}
   private readonly _relations: RelationsMap = {}
@@ -148,11 +201,11 @@ export class TableBuilder<T, S extends SchemaMap, TEvents extends TableEventMap 
     return this
   }
 
-  emits<M extends TableEventMap>(map: M): TableBuilder<T, S, M> {
-    const next = new TableBuilder<T, S, M>(this._name, this._schema)
+  emits<M extends TableEventMap>(map: M): TableBuilder<T, S, M, TRelations> {
+    const next = new TableBuilder<T, S, M, TRelations>(this._name, this._schema)
     // copy existing hooks and relations
     for (const h of this._hooks) (next as unknown as TableBuilder<T, S>)._hooks.push(h)
-    ;(next as unknown as TableBuilder<T, S>)._events = map
+    ;(next as unknown as TableBuilder<T, S, M, TRelations>)._events = map
     for (const [k, v] of Object.entries(this._relations)) {
       ;(next as unknown as TableBuilder<T, S>)._relations[k] = v
     }
@@ -161,45 +214,49 @@ export class TableBuilder<T, S extends SchemaMap, TEvents extends TableEventMap 
 
   /**
    * Declare a belongs-to relation — FK lives on this table.
+   * Returns a new builder with the relation type added to TRelations.
    *
    * @example
    * const postsTable = defineTable('posts', { authorId: column.integer() })
    *   .belongsTo('author', () => usersTable, 'authorId')
    *   .build()
    */
-  belongsTo(
-    name: string,
+  belongsTo<K extends string, TForeign>(
+    name: K,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getTable: () => TableDef<any, any, any>,
+    getTable: () => TableDef<TForeign, any, any, any>,
     foreignKey: keyof T & string,
-  ): this {
+  ): TableBuilder<T, S, TEvents, TRelations & Record<K, BelongsToRelation<TForeign>>> {
     if (name in this._relations) {
       throw new Error(`Relation '${name}' is already defined on table '${this._name}'`)
     }
-    this._relations[name] = { kind: 'belongsTo', name, getTable, foreignKey }
-    return this
+    const rel: BelongsToRelation<TForeign> = { kind: 'belongsTo', name, getTable, foreignKey }
+    this._relations[name] = rel
+    return this as unknown as TableBuilder<T, S, TEvents, TRelations & Record<K, BelongsToRelation<TForeign>>>
   }
 
   /**
    * Declare a has-many relation — FK lives on the foreign table.
+   * Returns a new builder with the relation type added to TRelations.
    *
    * @example
    * const usersTable = defineTable('users', { id: column.integer().primaryKey() })
    *   .hasMany('posts', () => postsTable, 'authorId')
    *   .build()
    */
-  hasMany(
-    name: string,
+  hasMany<K extends string, TForeign>(
+    name: K,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getTable: () => TableDef<any, any, any>,
+    getTable: () => TableDef<TForeign, any, any, any>,
     /** The FK column on the *foreign* table that points back to this table's PK. */
     foreignKey: string,
-  ): this {
+  ): TableBuilder<T, S, TEvents, TRelations & Record<K, HasManyRelation<TForeign>>> {
     if (name in this._relations) {
       throw new Error(`Relation '${name}' is already defined on table '${this._name}'`)
     }
-    this._relations[name] = { kind: 'hasMany', name, getTable, foreignKey }
-    return this
+    const rel: HasManyRelation<TForeign> = { kind: 'hasMany', name, getTable, foreignKey }
+    this._relations[name] = rel
+    return this as unknown as TableBuilder<T, S, TEvents, TRelations & Record<K, HasManyRelation<TForeign>>>
   }
 
   /**
@@ -210,17 +267,17 @@ export class TableBuilder<T, S extends SchemaMap, TEvents extends TableEventMap 
    *   .manyToMany('tags', () => tagsTable, postTagsTable, 'postId', 'tagId')
    *   .build()
    */
-  manyToMany(
-    name: string,
+  manyToMany<K extends string>(
+    name: K,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getTable: () => TableDef<any, any, any>,
+    getTable: () => TableDef<any, any, any, any>,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    pivotTable: TableDef<any, any, any>,
+    pivotTable: TableDef<any, any, any, any>,
     /** FK on pivot pointing to this table's PK */
     localKey: string,
     /** FK on pivot pointing to the foreign table's PK */
     foreignKey: string,
-  ): this {
+  ): TableBuilder<T, S, TEvents, TRelations & Record<K, RelationMeta>> {
     if (name in this._relations) {
       throw new Error(`Relation '${name}' is already defined on table '${this._name}'`)
     }
@@ -231,10 +288,10 @@ export class TableBuilder<T, S extends SchemaMap, TEvents extends TableEventMap 
       foreignKey,
       pivot: { table: pivotTable, localKey, foreignKey },
     }
-    return this
+    return this as unknown as TableBuilder<T, S, TEvents, TRelations & Record<K, RelationMeta>>
   }
 
-  build(): TableDef<T, S, TEvents> {
+  build(): TableDef<T, S, TEvents, TRelations> {
     return {
       name: this._name,
       schema: this._schema,
@@ -246,7 +303,7 @@ export class TableBuilder<T, S extends SchemaMap, TEvents extends TableEventMap 
       // The field exists solely so TypeScript can infer TMap in onEvent() without
       // recomputing the conditional InferTableEvents each time.
       _eventMap: {} as InferTableEvents<T, TEvents>,
-      relations: { ...this._relations },  // copy — immutable after build
+      relations: { ...this._relations } as TRelations,
     }
   }
 

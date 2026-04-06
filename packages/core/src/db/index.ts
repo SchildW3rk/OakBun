@@ -1,5 +1,5 @@
 import type { VelnAdapter, BindingValue, QueryLogEntry } from '../adapter/types'
-import type { SchemaMap, TableDef, InferInsert, InferUpdate, RelationMeta } from '../schema/table'
+import type { SchemaMap, TableDef, InferInsert, InferUpdate, RelationMeta, RelationsMap, WithRelations } from '../schema/table'
 import type { HookExecutor } from '../hooks/executor'
 import { RequestEventQueue } from '../events/index'
 import { ValidationError } from '../app/types'
@@ -106,8 +106,11 @@ export class BoundVelnDB {
     }
   }
 
-  from<T, S extends SchemaMap>(table: TableDef<T, S>): SelectBuilder<T, S> {
-    return new SelectBuilder<T, S>(this.adapter, this.hooks, this.ctx, this.queue, table, {})
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  from<T, S extends SchemaMap, TRelations extends RelationsMap>(
+    table: TableDef<T, S, any, TRelations>,
+  ): SelectBuilder<T, S, TRelations> {
+    return new SelectBuilder<T, S, TRelations>(this.adapter, this.hooks, this.ctx, this.queue, table as TableDef<T, S, any, TRelations>, {})
   }
 
   /**
@@ -314,21 +317,16 @@ export class BoundVelnDB {
     const pk = foreignTable.primaryKey as string
 
     if (rel.kind === 'belongsTo') {
-      // FK is on the parent (source) table; PK is on the foreign table
+      // FK is on the parent (source) table; PK is on the foreign table.
+      // We cast to the explicit overload signature — runtime is correct,
+      // TypeScript can't narrow keyof unknown here.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ft = foreignTable as TableDef<any>
+      const fk = rel.foreignKey as keyof typeof parents[0] & string
       if (mode === 'one') {
-        return this.loadRelationOne(
-          parents,
-          rel.foreignKey as keyof typeof parents[0] & string,
-          foreignTable,
-          pk as keyof typeof foreignTable extends never ? never : string,
-        )
+        return this.loadRelationOne(parents, fk, ft, pk)
       }
-      return this.loadRelation(
-        parents,
-        rel.foreignKey as keyof typeof parents[0] & string,
-        foreignTable,
-        pk as keyof typeof foreignTable extends never ? never : string,
-      )
+      return this.loadRelation(parents, fk, ft, pk)
     }
 
     // hasMany: FK is on the foreign table; we group by FK value
@@ -422,25 +420,27 @@ function mergeWhereAnd<T>(
 
 // ── SelectBuilder ──────────────────────────────────────────────────────────
 
-export class SelectBuilder<T, S extends SchemaMap> {
+export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsMap = RelationsMap> {
   constructor(
     private readonly adapter: VelnAdapter,
     private readonly hooks: HookExecutor,
     private readonly ctx: unknown,
     private readonly queue: RequestEventQueue | undefined,
-    private readonly table: TableDef<T, S>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private readonly table: TableDef<T, S, any, TRelations>,
     private readonly conditions: WhereInput<T>,
     private readonly _options: SelectOptions = {},
     // Raw SQL fragments appended with AND. Each entry is { sql, params }.
     private readonly _rawWhere: { sql: string; params: BindingValue[] }[] = [],
     private readonly _dialect: SqlDialect = 'sqlite',
+    private readonly _withRelations: string[] = [],
   ) {}
 
   private _cloneWith(
     conditions: WhereInput<T>,
     rawWhere?: { sql: string; params: BindingValue[] }[],
-  ): SelectBuilder<T, S> {
-    return new SelectBuilder<T, S>(
+  ): SelectBuilder<T, S, TRelations> {
+    return new SelectBuilder<T, S, TRelations>(
       this.adapter,
       this.hooks,
       this.ctx,
@@ -450,11 +450,12 @@ export class SelectBuilder<T, S extends SchemaMap> {
       this._options,
       rawWhere ?? this._rawWhere,
       this._dialect,
+      this._withRelations,
     )
   }
 
-  private _clone(patch: Partial<SelectOptions>): SelectBuilder<T, S> {
-    return new SelectBuilder<T, S>(
+  private _clone(patch: Partial<SelectOptions>): SelectBuilder<T, S, TRelations> {
+    return new SelectBuilder<T, S, TRelations>(
       this.adapter,
       this.hooks,
       this.ctx,
@@ -464,6 +465,35 @@ export class SelectBuilder<T, S extends SchemaMap> {
       { ...this._options, ...patch },
       this._rawWhere,
       this._dialect,
+      this._withRelations,
+    )
+  }
+
+  /**
+   * Eager-load relations alongside the main query.
+   * One additional IN-query per relation — never N+1 regardless of row count.
+   *
+   * @example
+   * const posts = await db.from(postsTable).with({ author: true }).select()
+   * posts[0].author  // → User | null  (fully typed)
+   * posts[0].title   // → string       (original fields preserved)
+   */
+  with<Keys extends keyof TRelations & string>(
+    relations: { [K in Keys]: true },
+  ): SelectBuilder<WithRelations<T, { relations: TRelations }, Keys>, S, TRelations> {
+    const keys = Object.keys(relations) as Keys[]
+    return new SelectBuilder<WithRelations<T, { relations: TRelations }, Keys>, S, TRelations>(
+      this.adapter,
+      this.hooks,
+      this.ctx,
+      this.queue,
+      // table type cast: the schema/relations are unchanged; only T changes in the generic
+      this.table as unknown as TableDef<WithRelations<T, { relations: TRelations }, Keys>, S, any, TRelations>,
+      this.conditions as unknown as WhereInput<WithRelations<T, { relations: TRelations }, Keys>>,
+      this._options,
+      this._rawWhere,
+      this._dialect,
+      [...this._withRelations, ...keys],
     )
   }
 
@@ -476,7 +506,7 @@ export class SelectBuilder<T, S extends SchemaMap> {
    *
    * Multiple `.where()` calls are combined with AND.
    */
-  where(conditions: WhereInput<T>): SelectBuilder<T, S> {
+  where(conditions: WhereInput<T>): SelectBuilder<T, S, TRelations> {
     const merged = mergeWhereAnd(this.conditions, conditions)
     return this._cloneWith(merged)
   }
@@ -489,22 +519,22 @@ export class SelectBuilder<T, S extends SchemaMap> {
    * .whereRaw('"score" > "threshold"', [])
    * .whereRaw('"created_at" > ?', ['2024-01-01'])
    */
-  whereRaw(sql: string, params: BindingValue[]): SelectBuilder<T, S> {
+  whereRaw(sql: string, params: BindingValue[]): SelectBuilder<T, S, TRelations> {
     return this._cloneWith(this.conditions, [...this._rawWhere, { sql, params }])
   }
 
   /** Limit the number of rows returned. Bound as a parameter — never interpolated. */
-  limit(n: number): SelectBuilder<T, S> {
+  limit(n: number): SelectBuilder<T, S, TRelations> {
     return this._clone({ limit: n })
   }
 
   /** Skip the first n rows. Bound as a parameter — never interpolated. */
-  offset(n: number): SelectBuilder<T, S> {
+  offset(n: number): SelectBuilder<T, S, TRelations> {
     return this._clone({ offset: n })
   }
 
   /** Add an ORDER BY clause. Multiple calls accumulate in order. */
-  orderBy(col: keyof T & string, dir: 'ASC' | 'DESC' = 'ASC'): SelectBuilder<T, S> {
+  orderBy(col: keyof T & string, dir: 'ASC' | 'DESC' = 'ASC'): SelectBuilder<T, S, TRelations> {
     const existing = this._options.orderBy ?? []
     return this._clone({ orderBy: [...existing, { col, dir }] })
   }
@@ -514,7 +544,7 @@ export class SelectBuilder<T, S extends SchemaMap> {
    * page(1, 10) → LIMIT 10 OFFSET 0
    * page(2, 10) → LIMIT 10 OFFSET 10
    */
-  page(page: number, size: number): SelectBuilder<T, S> {
+  page(page: number, size: number): SelectBuilder<T, S, TRelations> {
     return this._clone({ limit: size, offset: (page - 1) * size })
   }
 
@@ -524,17 +554,17 @@ export class SelectBuilder<T, S extends SchemaMap> {
    *
    * Return type is narrowed to Pick<T, K> for full type safety.
    */
-  columns<K extends keyof T & string>(...cols: K[]): SelectBuilder<Pick<T, K>, S> {
+  columns<K extends keyof T & string>(...cols: K[]): SelectBuilder<Pick<T, K>, S, TRelations> {
     // Type cast required: the builder's T changes to Pick<T, K>.
     // At runtime the only difference is _options.columns — schema stays the same.
-    return this._clone({ columns: cols }) as unknown as SelectBuilder<Pick<T, K>, S>
+    return this._clone({ columns: cols }) as unknown as SelectBuilder<Pick<T, K>, S, TRelations>
   }
 
   /**
    * Add a GROUP BY clause. Multiple columns are comma-separated.
    * Combine with .aggregate() to get grouped aggregate results.
    */
-  groupBy(...cols: (keyof T & string)[]): SelectBuilder<T, S> {
+  groupBy(...cols: (keyof T & string)[]): SelectBuilder<T, S, TRelations> {
     return this._clone({ groupBy: cols as string[] })
   }
 
@@ -545,7 +575,7 @@ export class SelectBuilder<T, S extends SchemaMap> {
    * @example
    * .groupBy('role').aggregate({ cnt: { fn: 'COUNT' } }).having({ cnt: { op: '>', value: 1 } })
    */
-  having(conditions: WhereInput<Record<string, unknown>>): SelectBuilder<T, S> {
+  having(conditions: WhereInput<Record<string, unknown>>): SelectBuilder<T, S, TRelations> {
     return this._clone({ having: conditions })
   }
 
@@ -716,17 +746,125 @@ export class SelectBuilder<T, S extends SchemaMap> {
       finalParams = allParams
     }
 
-    const rows = await this.adapter.query<Record<string, unknown>>(finalSql, finalParams)
+    const rawRows = await this.adapter.query<Record<string, unknown>>(finalSql, finalParams)
     // When columns are restricted, only deserialize the selected columns
+    let rows: T[]
     if (this._options.columns && this._options.columns.length > 0) {
-      return rows as unknown as T[]
+      rows = rawRows as unknown as T[]
+    } else {
+      rows = rawRows.map((row) => deserializeRow(this.table, row))
     }
-    return rows.map((row) => deserializeRow(this.table, row))
+
+    if (this._withRelations.length === 0) return rows
+    return this._executeWith(rows)
   }
 
   async first(): Promise<T | null> {
     const rows = await this.select()
     return rows[0] ?? null
+  }
+
+  // ── Eager loading — _executeWith ────────────────────────────────────────
+
+  private async _executeWith(rows: T[]): Promise<T[]> {
+    if (rows.length === 0) return rows
+
+    const mutableRows = rows.map((r) => ({ ...(r as Record<string, unknown>) })) as T[]
+
+    for (const relationName of this._withRelations) {
+      const meta = this.table.relations[relationName] as RelationMeta | undefined
+      if (!meta) continue
+
+      if (meta.kind === 'manyToMany') {
+        throw new Error(
+          `manyToMany eager loading is not yet supported. ` +
+          `Use loadRelation manually for relation '${relationName}'.`,
+        )
+      }
+
+      if (meta.kind === 'belongsTo') {
+        await this._attachBelongsTo(mutableRows as Record<string, unknown>[], relationName, meta)
+      } else if (meta.kind === 'hasMany') {
+        await this._attachHasMany(mutableRows as Record<string, unknown>[], relationName, meta)
+      }
+    }
+
+    return mutableRows
+  }
+
+  private async _attachBelongsTo(
+    rows:         Record<string, unknown>[],
+    relationName: string,
+    meta:         RelationMeta,
+  ): Promise<void> {
+    const foreignTable = meta.getTable()
+    const fkValues = rows
+      .map((r) => r[meta.foreignKey])
+      .filter((v): v is BindingValue => v !== null && v !== undefined)
+
+    if (fkValues.length === 0) {
+      for (const r of rows) r[relationName] = null
+      return
+    }
+
+    const uniqueFkValues = [...new Set(fkValues)]
+    const pk = foreignTable.primaryKey as string
+    const { sql, params } = buildSelect(
+      foreignTable.name,
+      { [pk]: { op: 'IN', value: uniqueFkValues } },
+      {},
+      this._dialect,
+    )
+    const related = await this.adapter.query<Record<string, unknown>>(sql, params)
+    const relatedMap = new Map<unknown, unknown>()
+    for (const r of related) {
+      relatedMap.set(r[pk], deserializeRow(foreignTable, r))
+    }
+
+    for (const r of rows) {
+      r[relationName] = relatedMap.get(r[meta.foreignKey]) ?? null
+    }
+  }
+
+  private async _attachHasMany(
+    rows:         Record<string, unknown>[],
+    relationName: string,
+    meta:         RelationMeta,
+  ): Promise<void> {
+    const foreignTable = meta.getTable()
+    const pk = this.table.primaryKey as string
+    const pkValues = rows.map((r) => r[pk]).filter((v): v is BindingValue => v !== null && v !== undefined)
+
+    if (pkValues.length === 0) {
+      for (const r of rows) r[relationName] = []
+      return
+    }
+
+    const { sql, params } = buildSelect(
+      foreignTable.name,
+      { [meta.foreignKey]: { op: 'IN', value: pkValues } },
+      {},
+      this._dialect,
+    )
+    const related = await this.adapter.query<Record<string, unknown>>(sql, params)
+
+    const grouped = new Map<unknown, unknown[]>()
+    for (const pkVal of pkValues) grouped.set(pkVal, [])
+
+    for (const r of related) {
+      const fkVal = r[meta.foreignKey]
+      const deserialized = deserializeRow(foreignTable, r)
+      const group = grouped.get(fkVal)
+      if (group) {
+        group.push(deserialized)
+      } else {
+        grouped.set(fkVal, [deserialized])
+      }
+    }
+
+    for (const r of rows) {
+      r[relationName] = grouped.get(r[pk]) ?? []
+    }
   }
 
   async update(patch: Partial<T>): Promise<T> {
