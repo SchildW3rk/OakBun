@@ -6,11 +6,9 @@
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": true,
-    "outDir": "./dist",
-    "paths": {
-      "oakbun": ["../core/src/index.ts"],
-      "oakbun/*": ["../core/src/*"]
-    }
+    "outDir": "./dist"
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ]
 }

@@ -35,9 +35,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.build.json",
+    "build": "tsup",
     "build:watch": "tsup --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bunx tsc --noEmit",
     "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
