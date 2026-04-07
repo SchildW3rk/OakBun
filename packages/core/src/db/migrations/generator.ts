@@ -8,7 +8,8 @@ import { introspectSchema } from './introspect'
 import { compareSchemas } from './diff'
 
 export interface GenerateOptions {
-  tables:        TableDef<unknown, SchemaMap>[]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  tables:        TableDef<any, SchemaMap>[]
   adapter:       VelnAdapter
   migrationsDir: string
   name?:         string

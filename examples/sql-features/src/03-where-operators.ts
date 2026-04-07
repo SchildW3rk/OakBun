@@ -20,20 +20,19 @@ import { z }                   from 'zod'
 import { usersTable, postsTable, ordersTable } from './schema'
 
 const adapter = new SQLiteAdapter()
-const app = createApp()
-app.plugin(dbPlugin(adapter))
+const app = createApp().plugin(dbPlugin(adapter))
 
 // GET /users/search?name=alice — case-insensitive LIKE
-app.get('/users/search', {
-  query: z.object({ name: z.string().optional() }),
-  handler: async (ctx) => {
+app.get('/users/search',
+  { query: z.object({ name: z.string().optional() }) },
+  async (ctx) => {
     let query = ctx.db.from(usersTable)
     if (ctx.query.name) {
       query = query.where({ name: { op: 'ILIKE', value: `%${ctx.query.name}%` } })
     }
     return ctx.json(await query.select())
   },
-})
+)
 
 // GET /users/admins — role IN list
 app.get('/users/admins', async (ctx) => {

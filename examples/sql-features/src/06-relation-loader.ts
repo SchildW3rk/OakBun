@@ -23,8 +23,7 @@ import { SQLiteAdapter }       from 'oakbun/adapter/sqlite'
 import { postsTable, usersTable, ordersTable } from './schema'
 
 const adapter = new SQLiteAdapter()
-const app = createApp()
-app.plugin(dbPlugin(adapter))
+const app = createApp().plugin(dbPlugin(adapter))
 
 // GET /posts/with-authors — n:1 (jeder Post hat einen Author)
 app.get('/posts/with-authors', async (ctx) => {

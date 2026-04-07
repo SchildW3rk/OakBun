@@ -108,12 +108,9 @@ const app = createApp({
 
 // ── SQL-B — Pagination ────────────────────────────────────────────────────────
 
-app.get('/posts', {
-  query: z.object({
-    page: z.coerce.number().min(1).default(1),
-    size: z.coerce.number().min(1).max(100).default(10),
-  }),
-  handler: async (ctx) => {
+app.get('/posts',
+  { query: z.object({ page: z.coerce.number().min(1).default(1), size: z.coerce.number().min(1).max(100).default(10) }) },
+  async (ctx) => {
     const posts = await ctx.db
       .from(postsTable)
       .orderBy('views', 'DESC')
@@ -121,14 +118,11 @@ app.get('/posts', {
       .select()
     return ctx.json({ page: ctx.query.page, size: ctx.query.size, data: posts })
   },
-})
+)
 
-app.get('/posts/window', {
-  query: z.object({
-    limit:  z.coerce.number().default(5),
-    offset: z.coerce.number().default(0),
-  }),
-  handler: async (ctx) => {
+app.get('/posts/window',
+  { query: z.object({ limit: z.coerce.number().default(5), offset: z.coerce.number().default(0) }) },
+  async (ctx) => {
     const posts = await ctx.db
       .from(postsTable)
       .limit(ctx.query.limit)
@@ -136,7 +130,7 @@ app.get('/posts/window', {
       .select()
     return ctx.json(posts)
   },
-})
+)
 
 // ── SQL-C — WHERE Operators ───────────────────────────────────────────────────
 
@@ -144,16 +138,16 @@ app.get('/users', async (ctx) =>
   ctx.json(await ctx.db.from(usersTable).select()),
 )
 
-app.get('/users/search', {
-  query: z.object({ name: z.string().optional() }),
-  handler: async (ctx) => {
+app.get('/users/search',
+  { query: z.object({ name: z.string().optional() }) },
+  async (ctx) => {
     let q = ctx.db.from(usersTable)
     if (ctx.query.name) {
       q = q.where({ name: { op: 'ILIKE', value: `%${ctx.query.name}%` } })
     }
     return ctx.json(await q.select())
   },
-})
+)
 
 app.get('/users/admins', async (ctx) =>
   ctx.json(

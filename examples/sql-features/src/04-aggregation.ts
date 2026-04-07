@@ -25,8 +25,7 @@ import { SQLiteAdapter }       from 'oakbun/adapter/sqlite'
 import { ordersTable, postsTable } from './schema'
 
 const adapter = new SQLiteAdapter()
-const app = createApp()
-app.plugin(dbPlugin(adapter))
+const app = createApp().plugin(dbPlugin(adapter))
 
 // GET /orders/stats — skalare Aggregates auf gefiltertem Set
 app.get('/orders/stats', async (ctx) => {

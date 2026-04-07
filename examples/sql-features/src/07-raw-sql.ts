@@ -16,8 +16,7 @@ import { z }                   from 'zod'
 import { postsTable }          from './schema'
 
 const adapter = new SQLiteAdapter()
-const app = createApp()
-app.plugin(dbPlugin(adapter))
+const app = createApp().plugin(dbPlugin(adapter))
 
 // ── db.raw() ohne Schema ──────────────────────────────────────────────────────
 

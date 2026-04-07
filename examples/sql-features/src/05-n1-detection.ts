@@ -29,9 +29,7 @@ const app = createApp({
       logQueries:  true,  // SQL-Details im Warning
     },
   },
-})
-
-app.plugin(dbPlugin(adapter))
+}).plugin(dbPlugin(adapter))
 
 // ❌ Anti-Pattern — löst N+1-Warning aus wenn > 10 Posts vorhanden
 app.get('/posts-bad', async (ctx) => {

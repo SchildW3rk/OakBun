@@ -162,7 +162,7 @@ export class BoundVelnDB {
   loadRelation<TParent extends Record<string, unknown>>(
     parents:      TParent[],
     relationName: string,
-    sourceTable:  TableDef<unknown>,
+    sourceTable:  TableDef<any>,
   ): Promise<Map<unknown, unknown>>
   // Implementation
   async loadRelation<
@@ -237,7 +237,7 @@ export class BoundVelnDB {
   loadRelationOne<TParent extends Record<string, unknown>>(
     parents:      TParent[],
     relationName: string,
-    sourceTable:  TableDef<unknown>,
+    sourceTable:  TableDef<any>,
   ): Promise<Map<unknown, unknown>>
   // Implementation
   async loadRelationOne<

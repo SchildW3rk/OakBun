@@ -25,6 +25,7 @@ export { defineAuditTable }                       from './schema/audit'
 export type { AuditTableDef, AuditLog, AuditConfig } from './schema/audit'
 
 // Hooks
+export { HookExecutor }                           from './hooks/executor'
 export type { ModuleHookHandlers, HookOperation } from './hooks/types'
 
 // Migrations

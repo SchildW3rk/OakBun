@@ -51,7 +51,8 @@ function columnsEqual(a: ColumnDef, b: ColumnDef): boolean {
 
 export function compareSchemas(
   current: Map<string, TableDiff>,
-  target:  TableDefSchema<unknown, SchemaMap>[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  target:  TableDefSchema<any, SchemaMap>[],
 ): SchemaDiff {
   const addedTables:    TableDiff[]          = []
   const droppedTables:  string[]             = []
