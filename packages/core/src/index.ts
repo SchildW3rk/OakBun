@@ -37,7 +37,7 @@ export type {
 } from './db/migrations/index'
 
 // DB
-export { VelnDB, BoundVelnDB, SelectBuilder, InsertBuilder, JoinBuilder } from './db/index'
+export { VelnDB, BoundVelnDB, SelectBuilder, InsertBuilder, JoinBuilder, SoftDeleteBuilder } from './db/index'
 export type {
   PendingEvent, TransactionResult, QueryLog,
 }                                                            from './db/index'

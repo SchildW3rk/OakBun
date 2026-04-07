@@ -178,6 +178,8 @@ export interface TableDef<
   readonly _eventMap: InferTableEvents<T, TEvents>
   /** Declared relations — concrete typed map so WithRelations can infer foreign types. */
   readonly relations: TRelations
+  /** The column used for soft delete, or null if not configured. */
+  readonly softDeleteColumn: (keyof T & string) | null
 }
 
 export class TableBuilder<
@@ -189,6 +191,7 @@ export class TableBuilder<
   private readonly _hooks: TableHookHandlers<T>[] = []
   private _events: TableEventMap = {}
   private readonly _relations: RelationsMap = {}
+  private _softDeleteColumn: (keyof T & string) | null = null
 
   constructor(
     private readonly _name: string,
@@ -201,14 +204,33 @@ export class TableBuilder<
     return this
   }
 
+  /**
+   * Designate a column as the soft-delete timestamp.
+   * Once set, all SELECTs automatically add `WHERE "col" IS NULL`.
+   * Use `.withDeleted()` on the query to opt out.
+   *
+   * The column must exist in the schema (validated in `build()`).
+   *
+   * @example
+   * const usersTable = defineTable('users', {
+   *   id:        column.integer().primaryKey(),
+   *   deletedAt: column.timestamp().nullable(),
+   * }).withSoftDelete('deletedAt').build()
+   */
+  withSoftDelete<Col extends keyof T & string>(col: Col): this {
+    this._softDeleteColumn = col
+    return this
+  }
+
   emits<M extends TableEventMap>(map: M): TableBuilder<T, S, M, TRelations> {
     const next = new TableBuilder<T, S, M, TRelations>(this._name, this._schema)
-    // copy existing hooks and relations
+    // copy existing hooks, relations, and softDeleteColumn
     for (const h of this._hooks) (next as unknown as TableBuilder<T, S>)._hooks.push(h)
     ;(next as unknown as TableBuilder<T, S, M, TRelations>)._events = map
     for (const [k, v] of Object.entries(this._relations)) {
       ;(next as unknown as TableBuilder<T, S>)._relations[k] = v
     }
+    ;(next as unknown as TableBuilder<T, S>)._softDeleteColumn = this._softDeleteColumn
     return next
   }
 
@@ -292,6 +314,12 @@ export class TableBuilder<
   }
 
   build(): TableDef<T, S, TEvents, TRelations> {
+    if (this._softDeleteColumn !== null && !(this._softDeleteColumn in this._schema)) {
+      throw new Error(
+        `withSoftDelete: column '${this._softDeleteColumn as string}' is not defined in table '${this._name}'. ` +
+        `Add it to the schema: column.timestamp().nullable()`,
+      )
+    }
     return {
       name: this._name,
       schema: this._schema,
@@ -304,6 +332,7 @@ export class TableBuilder<
       // recomputing the conditional InferTableEvents each time.
       _eventMap: {} as InferTableEvents<T, TEvents>,
       relations: { ...this._relations } as TRelations,
+      softDeleteColumn: this._softDeleteColumn,
     }
   }
 

@@ -338,6 +338,29 @@ export function buildInsertMany(
 }
 
 /**
+ * Build a soft-delete or restore UPDATE statement.
+ * UPDATE "table" SET "col" = ? [WHERE ...]
+ *
+ * value is the new column value: Date (serialized to ISO string) for soft delete,
+ * null for restore.
+ */
+export function buildSoftDeleteUpdate(
+  tableName: string,
+  col:        string,
+  value:      Date | null,
+  where:      WhereInput<Record<string, unknown>>,
+  dialect:    SqlDialect = 'sqlite',
+): { sql: string; params: BindingValue[] } {
+  const serialized: BindingValue = value instanceof Date ? value.toISOString() : null
+  const { sql: whereSql, params: whereParams } = buildWhere(where, dialect)
+  const setSql = `"${col}" = ?`
+  const sql = whereSql
+    ? `UPDATE "${tableName}" SET ${setSql} WHERE ${whereSql}`
+    : `UPDATE "${tableName}" SET ${setSql}`
+  return { sql, params: [serialized, ...whereParams] }
+}
+
+/**
  * Build an UPDATE statement.
  * UPDATE "table" SET "col1" = ?, "col2" = ? WHERE "pk" = ?
  * The pk param is always last in params.

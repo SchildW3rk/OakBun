@@ -178,6 +178,13 @@
       "path": "sql/13-subqueries.md"
     },
     {
+      "title": "Soft Delete",
+      "category": "sql",
+      "tags": ["soft-delete", "delete", "restore", "withDeleted", "timestamp"],
+      "related": ["defineTable", "SelectBuilder", "Relations"],
+      "path": "sql/14-soft-delete.md"
+    },
+    {
       "title": "Plugin System",
       "category": "plugins",
       "tags": ["plugin", "extend", "context", "use"],

@@ -3,7 +3,7 @@ import type { SchemaMap, TableDef, InferInsert, InferUpdate, RelationMeta, Relat
 import type { HookExecutor } from '../hooks/executor'
 import { RequestEventQueue } from '../events/index'
 import { ValidationError } from '../app/types'
-import { buildInsert, buildInsertMany, buildUpdate, buildDelete, buildSelect, buildJoinSelect, buildWhere, buildSelectListFromOptions, deserializeRow, buildSubquery } from './sql'
+import { buildInsert, buildInsertMany, buildUpdate, buildDelete, buildSelect, buildJoinSelect, buildWhere, buildSelectListFromOptions, deserializeRow, buildSubquery, buildSoftDeleteUpdate } from './sql'
 import type { JoinClause, SelectOptions, WhereInput, SqlDialect, AggregateClause, SubqueryResult } from './sql'
 
 // ── QueryLog — per-request query accumulator ──────────────────────────────
@@ -434,6 +434,8 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     private readonly _rawWhere: { sql: string; params: BindingValue[] }[] = [],
     private readonly _dialect: SqlDialect = 'sqlite',
     private readonly _withRelations: string[] = [],
+    // When true, the soft-delete IS NULL filter is skipped.
+    private readonly _includeDeleted: boolean = false,
   ) {}
 
   private _cloneWith(
@@ -451,6 +453,7 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
       rawWhere ?? this._rawWhere,
       this._dialect,
       this._withRelations,
+      this._includeDeleted,
     )
   }
 
@@ -466,6 +469,7 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
       this._rawWhere,
       this._dialect,
       this._withRelations,
+      this._includeDeleted,
     )
   }
 
@@ -494,6 +498,33 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
       this._rawWhere,
       this._dialect,
       [...this._withRelations, ...keys],
+      this._includeDeleted,
+    )
+  }
+
+  /**
+   * Include soft-deleted rows in the query result.
+   * By default, tables with `.withSoftDelete()` automatically exclude rows
+   * where the soft-delete column is not null.
+   *
+   * Has no effect on tables without soft delete configured.
+   *
+   * @example
+   * const allUsers = await db.from(usersTable).withDeleted().select()
+   */
+  withDeleted(): SelectBuilder<T, S, TRelations> {
+    return new SelectBuilder<T, S, TRelations>(
+      this.adapter,
+      this.hooks,
+      this.ctx,
+      this.queue,
+      this.table,
+      this.conditions,
+      this._options,
+      this._rawWhere,
+      this._dialect,
+      this._withRelations,
+      true,
     )
   }
 
@@ -571,18 +602,30 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
    * Build SELECT SQL + params without executing the query.
    * Used internally by ColumnRestrictedBuilder.subquery().
    */
+  /**
+   * Returns the effective WHERE conditions, injecting the soft-delete IS NULL
+   * filter when the table has a soft-delete column and .withDeleted() was not called.
+   */
+  private _effectiveConditions(): WhereInput<T> {
+    const col = this.table.softDeleteColumn
+    if (col === null || this._includeDeleted) return this.conditions
+    const softFilter = { [col]: { op: 'IS NULL' } } as WhereInput<T>
+    return mergeWhereAnd(this.conditions, softFilter)
+  }
+
   _buildSelectSQL(): { sql: string; params: BindingValue[] } {
+    const conditions = this._effectiveConditions()
     if (this._rawWhere.length === 0) {
       return buildSelect(
         this.table.name,
-        this.conditions as WhereInput<Record<string, unknown>>,
+        conditions as WhereInput<Record<string, unknown>>,
         this._options,
         this._dialect,
       )
     }
     // Raw WHERE path — mirrors select() logic but without executing
     const { sql: whereSql, params: whereParams } = buildWhere(
-      this.conditions as WhereInput<Record<string, unknown>>,
+      conditions as WhereInput<Record<string, unknown>>,
       this._dialect,
     )
     const allWhereParts: string[] = []
@@ -656,7 +699,7 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     // Merge aggregate clauses into current options and execute via select()
     const { sql, params } = buildSelect(
       this.table.name,
-      this.conditions as WhereInput<Record<string, unknown>>,
+      this._effectiveConditions() as WhereInput<Record<string, unknown>>,
       { ...this._options, aggregates: aggClauses },
       this._dialect,
     )
@@ -703,7 +746,7 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     const alias = '_agg'
     const colExpr = col ? `"${col as string}"` : '*'
     const { sql: whereSql, params } = buildWhere(
-      this.conditions as WhereInput<Record<string, unknown>>,
+      this._effectiveConditions() as WhereInput<Record<string, unknown>>,
       this._dialect,
     )
 
@@ -738,11 +781,12 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     let finalSql: string
     let finalParams: BindingValue[]
 
+    const effectiveConditions = this._effectiveConditions()
     if (this._rawWhere.length === 0) {
       // Fast path: no raw fragments — buildSelect handles everything
       const { sql, params } = buildSelect(
         this.table.name,
-        this.conditions as WhereInput<Record<string, unknown>>,
+        effectiveConditions as WhereInput<Record<string, unknown>>,
         this._options,
         this._dialect,
       )
@@ -751,7 +795,7 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     } else {
       // Merge structured WHERE + raw fragments via AND, then bolt on options
       const { sql: whereSql, params: whereParams } = buildWhere(
-        this.conditions as WhereInput<Record<string, unknown>>,
+        effectiveConditions as WhereInput<Record<string, unknown>>,
         this._dialect,
       )
       const allWhereParts: string[] = []
@@ -864,9 +908,13 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
 
     const uniqueFkValues = [...new Set(fkValues)]
     const pk = foreignTable.primaryKey as string
+    const baseConditions: Record<string, unknown> = { [pk]: { op: 'IN', value: uniqueFkValues } }
+    if (foreignTable.softDeleteColumn !== null) {
+      baseConditions[foreignTable.softDeleteColumn as string] = { op: 'IS NULL' }
+    }
     const { sql, params } = buildSelect(
       foreignTable.name,
-      { [pk]: { op: 'IN', value: uniqueFkValues } },
+      baseConditions as WhereInput<Record<string, unknown>>,
       {},
       this._dialect,
     )
@@ -895,9 +943,13 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
       return
     }
 
+    const hasManyConditions: Record<string, unknown> = { [meta.foreignKey]: { op: 'IN', value: pkValues } }
+    if (foreignTable.softDeleteColumn !== null) {
+      hasManyConditions[foreignTable.softDeleteColumn as string] = { op: 'IS NULL' }
+    }
     const { sql, params } = buildSelect(
       foreignTable.name,
-      { [meta.foreignKey]: { op: 'IN', value: pkValues } },
+      hasManyConditions as WhereInput<Record<string, unknown>>,
       {},
       this._dialect,
     )
@@ -1065,6 +1117,31 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
 
     return current
   }
+
+  /**
+   * Soft-delete rows by setting the soft-delete column to the current timestamp.
+   * The table must have `.withSoftDelete()` configured — throws otherwise (at execute() time).
+   *
+   * Does NOT call beforeUpdate/afterUpdate hooks.
+   * Without .where(), all rows in the table are soft-deleted.
+   *
+   * @example
+   * await db.from(usersTable).softDelete().where({ id: 1 }).execute()
+   */
+  softDelete(): SoftDeleteBuilder<T, S> {
+    return new SoftDeleteBuilder<T, S>(this.adapter, this.table, new Date(), this._dialect)
+  }
+
+  /**
+   * Restore soft-deleted rows by setting the soft-delete column back to null.
+   * The table must have `.withSoftDelete()` configured — throws otherwise (at execute() time).
+   *
+   * @example
+   * await db.from(usersTable).restore().where({ id: 1 }).execute()
+   */
+  restore(): SoftDeleteBuilder<T, S> {
+    return new SoftDeleteBuilder<T, S>(this.adapter, this.table, null, this._dialect)
+  }
 }
 
 // ── ColumnRestrictedBuilder ────────────────────────────────────────────────
@@ -1118,6 +1195,54 @@ export class ColumnRestrictedBuilder<Col extends string, TCol, S extends SchemaM
   subquery(): SubqueryResult<Col, TCol> {
     const { sql, params } = this._builder._buildSelectSQL()
     return buildSubquery<Col, TCol>(sql, params, this._col)
+  }
+}
+
+// ── SoftDeleteBuilder ─────────────────────────────────────────────────────
+// Returned by SelectBuilder.softDelete() and SelectBuilder.restore().
+// Accepts .where() for scoping, then .execute() to run the UPDATE.
+// Does NOT call beforeUpdate/afterUpdate hooks — soft delete is a system operation.
+
+export class SoftDeleteBuilder<T, S extends SchemaMap> {
+  private _conditions: WhereInput<T> = {} as WhereInput<T>
+
+  constructor(
+    private readonly adapter:   VelnAdapter,
+    private readonly table:     TableDef<T, S>,
+    private readonly _value:    Date | null,
+    private readonly _dialect:  SqlDialect = 'sqlite',
+  ) {}
+
+  /**
+   * Add WHERE conditions to scope which rows are soft-deleted / restored.
+   * Multiple calls accumulate with AND.
+   * Without .where(), all rows in the table are affected.
+   */
+  where(conditions: WhereInput<T>): this {
+    this._conditions = mergeWhereAnd(this._conditions, conditions)
+    return this
+  }
+
+  /**
+   * Execute the soft-delete or restore UPDATE.
+   * Throws if the table has no softDeleteColumn configured.
+   */
+  async execute(): Promise<void> {
+    const col = this.table.softDeleteColumn
+    if (col === null) {
+      throw new Error(
+        `softDelete() called on table '${this.table.name}' which has no soft delete column. ` +
+        `Add .withSoftDelete('deletedAt') to the table definition.`,
+      )
+    }
+    const { sql, params } = buildSoftDeleteUpdate(
+      this.table.name,
+      col as string,
+      this._value,
+      this._conditions as WhereInput<Record<string, unknown>>,
+      this._dialect,
+    )
+    await this.adapter.execute(sql, params)
   }
 }
 
