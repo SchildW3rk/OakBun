@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.2.0
+
+### Minor Changes
+
+- Add SQL features: eager loading, subquery DSL, soft delete, distinct/union, batch ops examples
+
+  **New features:**
+
+  - **Eager loading** — `.with({ author: true, comments: true })` on `SelectBuilder` loads relations in N+1 queries (1 per relation), fully typed via `WithRelations<T, ...>`
+  - **Subquery DSL** — `.columns('id').subquery()` returns a `SubqueryResult<Col, T>` usable in `WHERE IN` / `NOT IN` conditions; `buildSubquery()` exported
+  - **Soft delete** — `.withSoftDelete('deletedAt')` on `TableBuilder`; automatic `IS NULL` filter in all queries; `.softDelete()`, `.restore()`, `.withDeleted()` on `SelectBuilder`; soft-delete aware relation loading
+  - **Distinct** — `.distinct()` on `SelectBuilder` emits `SELECT DISTINCT`
+  - **Union** — `.union()` / `.unionAll()` on `ColumnRestrictedBuilder` returns `UnionBuilder<T>`; `.subquery()` on `UnionBuilder` for use in `WHERE IN`
+  - **`HookExecutor` exported** from public index for standalone (non-HTTP) usage
+
+  **Bug fixes:**
+
+  - `loadRelation` / `loadRelationOne` name-based overloads: `TableDef<unknown>` → `TableDef<any>` — concrete tables with non-never `primaryKey` are now assignable
+  - `generateMigration` / `compareSchemas`: same fix for `tables` / `target` params
+  - `app.plugin()` return value must be captured to get the typed `ctx.db` — fixed in all `sql-features/src` examples
+
+  **Examples:**
+
+  Seven new standalone scripts in `examples/sql-features/` covering every feature with realistic scenarios and full console output.
+
 ## 0.1.1
 
 ### Patch Changes
