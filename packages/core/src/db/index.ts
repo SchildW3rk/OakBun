@@ -3,7 +3,7 @@ import type { SchemaMap, TableDef, InferInsert, InferUpdate, RelationMeta, Relat
 import type { HookExecutor } from '../hooks/executor'
 import { RequestEventQueue } from '../events/index'
 import { ValidationError } from '../app/types'
-import { buildInsert, buildInsertMany, buildUpdate, buildDelete, buildSelect, buildJoinSelect, buildWhere, buildSelectListFromOptions, deserializeRow, buildSubquery, buildSoftDeleteUpdate } from './sql'
+import { buildInsert, buildInsertMany, buildUpdate, buildDelete, buildSelect, buildJoinSelect, buildWhere, buildSelectListFromOptions, deserializeRow, buildSubquery, buildSoftDeleteUpdate, buildUnion } from './sql'
 import type { JoinClause, SelectOptions, WhereInput, SqlDialect, AggregateClause, SubqueryResult } from './sql'
 
 // ── QueryLog — per-request query accumulator ──────────────────────────────
@@ -554,6 +554,18 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     return this._cloneWith(this.conditions, [...this._rawWhere, { sql, params }])
   }
 
+  /**
+   * Apply SELECT DISTINCT — deduplicate rows in the result set.
+   * Combine with `.columns()` to deduplicate on specific columns.
+   *
+   * @example
+   * await db.from(usersTable).columns('name').distinct().select()
+   * // → SELECT DISTINCT "name" FROM "users"
+   */
+  distinct(): SelectBuilder<T, S, TRelations> {
+    return this._clone({ distinct: true })
+  }
+
   /** Limit the number of rows returned. Bound as a parameter — never interpolated. */
   limit(n: number): SelectBuilder<T, S, TRelations> {
     return this._clone({ limit: n })
@@ -602,6 +614,11 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
    * Build SELECT SQL + params without executing the query.
    * Used internally by ColumnRestrictedBuilder.subquery().
    */
+  /** Internal accessor for ColumnRestrictedBuilder / UnionBuilder — returns the adapter. */
+  _getAdapter(): VelnAdapter { return this.adapter }
+  /** Internal accessor for ColumnRestrictedBuilder / UnionBuilder — returns the SQL dialect. */
+  _getDialect(): SqlDialect { return this._dialect }
+
   /**
    * Returns the effective WHERE conditions, injecting the soft-delete IS NULL
    * filter when the table has a soft-delete column and .withDeleted() was not called.
@@ -637,10 +654,11 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     }
     const combinedWhere = allWhereParts.join(' AND ')
     const selectList = buildSelectListFromOptions(this._options)
+    const selectKeyword = this._options.distinct ? 'SELECT DISTINCT' : 'SELECT'
     const parts: string[] = [
       combinedWhere
-        ? `SELECT ${selectList} FROM "${this.table.name}" WHERE ${combinedWhere}`
-        : `SELECT ${selectList} FROM "${this.table.name}"`,
+        ? `${selectKeyword} ${selectList} FROM "${this.table.name}" WHERE ${combinedWhere}`
+        : `${selectKeyword} ${selectList} FROM "${this.table.name}"`,
     ]
     if (this._options.orderBy && this._options.orderBy.length > 0) {
       const clause = this._options.orderBy.map(({ col, dir }) => `"${col}" ${dir}`).join(', ')
@@ -1196,6 +1214,41 @@ export class ColumnRestrictedBuilder<Col extends string, TCol, S extends SchemaM
     const { sql, params } = this._builder._buildSelectSQL()
     return buildSubquery<Col, TCol>(sql, params, this._col)
   }
+
+  /** Build raw SELECT SQL + params without parentheses (for UNION). */
+  _buildRawSQL(): { sql: string; params: BindingValue[] } {
+    return this._builder._buildSelectSQL()
+  }
+
+  /**
+   * Combine this query with another same-type column query via UNION (deduplicates).
+   * Both sides must produce the same column type — enforced at compile time.
+   *
+   * @example
+   * db.from(usersTable).columns('id')
+   *   .union(db.from(adminsTable).columns('id'))
+   *   .select()
+   */
+  union(other: ColumnRestrictedBuilder<string, TCol, SchemaMap, RelationsMap>): UnionBuilder<TCol> {
+    return new UnionBuilder<TCol>(
+      [this._buildRawSQL(), other._buildRawSQL()],
+      'UNION',
+      this._builder._getAdapter(),
+      this._builder._getDialect(),
+    )
+  }
+
+  /**
+   * Combine via UNION ALL — keeps duplicate rows.
+   */
+  unionAll(other: ColumnRestrictedBuilder<string, TCol, SchemaMap, RelationsMap>): UnionBuilder<TCol> {
+    return new UnionBuilder<TCol>(
+      [this._buildRawSQL(), other._buildRawSQL()],
+      'UNION ALL',
+      this._builder._getAdapter(),
+      this._builder._getDialect(),
+    )
+  }
 }
 
 // ── SoftDeleteBuilder ─────────────────────────────────────────────────────
@@ -1243,6 +1296,84 @@ export class SoftDeleteBuilder<T, S extends SchemaMap> {
       this._dialect,
     )
     await this.adapter.execute(sql, params)
+  }
+}
+
+// ── UnionBuilder ──────────────────────────────────────────────────────────
+// Returned by ColumnRestrictedBuilder.union() / .unionAll().
+// Chains UNION / UNION ALL queries and executes them as a single query.
+
+export class UnionBuilder<T> {
+  private _orderBy?: { col: string; dir: 'ASC' | 'DESC' }
+  private _limit?:   number
+
+  constructor(
+    private readonly _parts:   Array<{ sql: string; params: BindingValue[] }>,
+    private readonly _kind:    'UNION' | 'UNION ALL',
+    private readonly _adapter: VelnAdapter,
+    private readonly _dialect: SqlDialect,
+  ) {}
+
+  /** Append another UNION (deduplicating) leg. */
+  union(other: ColumnRestrictedBuilder<string, T, SchemaMap, RelationsMap>): UnionBuilder<T> {
+    return new UnionBuilder<T>(
+      [...this._parts, other._buildRawSQL()],
+      'UNION',
+      this._adapter,
+      this._dialect,
+    )
+  }
+
+  /** Append another UNION ALL (keep duplicates) leg. */
+  unionAll(other: ColumnRestrictedBuilder<string, T, SchemaMap, RelationsMap>): UnionBuilder<T> {
+    return new UnionBuilder<T>(
+      [...this._parts, other._buildRawSQL()],
+      'UNION ALL',
+      this._adapter,
+      this._dialect,
+    )
+  }
+
+  /** Add ORDER BY to the entire UNION result. */
+  orderBy(col: string, dir: 'ASC' | 'DESC' = 'ASC'): UnionBuilder<T> {
+    const next = new UnionBuilder<T>(this._parts, this._kind, this._adapter, this._dialect)
+    next._orderBy = { col, dir }
+    next._limit   = this._limit
+    return next
+  }
+
+  /** Add LIMIT to the entire UNION result. */
+  limit(n: number): UnionBuilder<T> {
+    const next = new UnionBuilder<T>(this._parts, this._kind, this._adapter, this._dialect)
+    next._orderBy = this._orderBy
+    next._limit   = n
+    return next
+  }
+
+  /** Execute the UNION query and return typed rows. */
+  async select(): Promise<Record<string, T>[]> {
+    const { sql, params } = buildUnion(this._parts, this._kind, {
+      orderBy: this._orderBy,
+      limit:   this._limit,
+    })
+    return this._adapter.query<Record<string, T>>(sql, params)
+  }
+
+  /**
+   * Build the UNION as a subquery — wrapped in parentheses.
+   * Usable in WHERE IN / NOT IN conditions.
+   *
+   * @example
+   * const adminOrModIds = db.from(usersTable).columns('id').where({ role: 'admin' })
+   *   .union(db.from(usersTable).columns('id').where({ role: 'mod' }))
+   *   .subquery()
+   */
+  subquery(): SubqueryResult<string, T> {
+    const { sql, params } = buildUnion(this._parts, this._kind, {
+      orderBy: this._orderBy,
+      limit:   this._limit,
+    })
+    return buildSubquery<string, T>(sql, params, '')
   }
 }
 

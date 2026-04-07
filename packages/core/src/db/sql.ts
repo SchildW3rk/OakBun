@@ -428,6 +428,7 @@ export interface SelectOptions {
   groupBy?:    string[]            // GROUP BY columns
   aggregates?: AggregateClause[]  // aggregate expressions added to SELECT
   having?:     WhereInput<Record<string, unknown>>  // HAVING clause
+  distinct?:   boolean            // SELECT DISTINCT when true
 }
 
 /** Build the SELECT column list from options. Exported for use in SelectBuilder's raw-where path. */
@@ -488,6 +489,32 @@ function appendPaginationAndOrder(
 }
 
 /**
+ * Build a UNION or UNION ALL query from two or more SELECT SQL fragments.
+ * Optionally appends ORDER BY + LIMIT to the combined query.
+ *
+ * Throws if fewer than 2 parts are provided.
+ */
+export function buildUnion(
+  parts:   Array<{ sql: string; params: BindingValue[] }>,
+  kind:    'UNION' | 'UNION ALL',
+  options: { orderBy?: { col: string; dir: 'ASC' | 'DESC' }; limit?: number } = {},
+): { sql: string; params: BindingValue[] } {
+  if (parts.length < 2) {
+    throw new Error('buildUnion: at least 2 parts required')
+  }
+  const sqls   = parts.map((p) => p.sql)
+  const params = parts.flatMap((p) => p.params)
+  let sql = sqls.join(` ${kind} `)
+  if (options.orderBy) {
+    sql += ` ORDER BY "${options.orderBy.col}" ${options.orderBy.dir ?? 'ASC'}`
+  }
+  if (options.limit !== undefined) {
+    sql += ` LIMIT ${Math.trunc(Math.max(0, options.limit))}`
+  }
+  return { sql, params }
+}
+
+/**
  * Build a SELECT statement.
  * SELECT [cols] FROM "table" [WHERE ...] [GROUP BY ...] [HAVING ...] [ORDER BY ...] [LIMIT n] [OFFSET n]
  */
@@ -499,11 +526,12 @@ export function buildSelect(
 ): { sql: string; params: BindingValue[] } {
   const selectList = buildSelectListFromOptions(options)
   const { sql: whereSql, params } = buildWhere(conditions, dialect)
+  const selectKeyword = options?.distinct ? 'SELECT DISTINCT' : 'SELECT'
 
   const parts: string[] = [
     whereSql
-      ? `SELECT ${selectList} FROM "${tableName}" WHERE ${whereSql}`
-      : `SELECT ${selectList} FROM "${tableName}"`,
+      ? `${selectKeyword} ${selectList} FROM "${tableName}" WHERE ${whereSql}`
+      : `${selectKeyword} ${selectList} FROM "${tableName}"`,
   ]
 
   // GROUP BY

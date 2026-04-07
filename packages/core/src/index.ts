@@ -37,12 +37,12 @@ export type {
 } from './db/migrations/index'
 
 // DB
-export { VelnDB, BoundVelnDB, SelectBuilder, InsertBuilder, JoinBuilder, SoftDeleteBuilder } from './db/index'
+export { VelnDB, BoundVelnDB, SelectBuilder, InsertBuilder, JoinBuilder, SoftDeleteBuilder, UnionBuilder } from './db/index'
 export type {
   PendingEvent, TransactionResult, QueryLog,
 }                                                            from './db/index'
 export type { JoinClause, SelectOptions, AggregateClause, WhereInput, WhereOp, WhereConditions, FieldCondition, SqlDialect, InValue, SubqueryResult } from './db/sql'
-export { buildSubquery }                                     from './db/sql'
+export { buildSubquery, buildUnion }                         from './db/sql'
 // EventBus interface (structural type from db layer — the class below satisfies it)
 export type { EventBus as EventBusInterface }                 from './db/index'
 

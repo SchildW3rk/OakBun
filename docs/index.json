@@ -185,6 +185,13 @@
       "path": "sql/14-soft-delete.md"
     },
     {
+      "title": "Distinct + Union",
+      "category": "sql",
+      "tags": ["distinct", "union", "deduplication", "combine"],
+      "related": ["SelectBuilder", "Where Operators", "Subqueries"],
+      "path": "sql/15-distinct-union.md"
+    },
+    {
       "title": "Plugin System",
       "category": "plugins",
       "tags": ["plugin", "extend", "context", "use"],
