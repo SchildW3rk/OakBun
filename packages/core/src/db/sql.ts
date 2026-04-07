@@ -3,6 +3,41 @@ import type { TableDef, SchemaMap } from '../schema/table'
 import type { Column } from '../schema/column'
 import { VelnError } from '../errors/index'
 
+// ── SubqueryResult ────────────────────────────────────────────────────────────
+
+/**
+ * Phantom-typed wrapper for a subquery SQL fragment.
+ * Col and T are used only at compile time — _phantom is never read at runtime.
+ *
+ * Produced by SelectBuilder.columns(col).subquery().
+ * Accepted by WhereOp IN / NOT IN in place of an array.
+ */
+export interface SubqueryResult<Col extends string, T> {
+  readonly _sql:     string
+  readonly _params:  BindingValue[]
+  readonly _phantom: { col: Col; type: T }
+}
+
+/**
+ * Build a SubqueryResult from a complete SELECT SQL string + params.
+ * Wraps the SQL in parentheses (required by SQL syntax).
+ *
+ * The T generic is a phantom — it is never instantiated at runtime.
+ * The only permitted cast in this file is `undefined as unknown as T`.
+ */
+export function buildSubquery<Col extends string, T>(
+  sql:    string,
+  params: BindingValue[],
+  col:    Col,
+): SubqueryResult<Col, T> {
+  if (!sql) throw new Error('buildSubquery: sql must not be empty')
+  return {
+    _sql:     `(${sql})`,
+    _params:  params,
+    _phantom: { col, type: undefined as unknown as T },
+  }
+}
+
 // ── JOIN types ────────────────────────────────────────────────────────────────
 
 export interface JoinClause {
@@ -37,6 +72,9 @@ export function validateAndQuoteOnClause(on: string): string {
 /** SQL dialect — used for ILIKE fallback on non-Postgres adapters. */
 export type SqlDialect = 'sqlite' | 'postgres' | 'mysql'
 
+/** Accepted value for IN / NOT IN — either a plain array or a typed subquery. */
+export type InValue<T> = T[] | SubqueryResult<string, T>
+
 /** Explicit operator condition for a single column. */
 export type WhereOp<T> =
   | { op: '=';          value: T }
@@ -45,8 +83,8 @@ export type WhereOp<T> =
   | { op: '>=';         value: T }
   | { op: '<';          value: T }
   | { op: '<=';         value: T }
-  | { op: 'IN';         value: T[] }
-  | { op: 'NOT IN';     value: T[] }
+  | { op: 'IN';         value: InValue<T> }
+  | { op: 'NOT IN';     value: InValue<T> }
   | { op: 'LIKE';       value: string }
   | { op: 'ILIKE';      value: string }
   | { op: 'IS NULL' }
@@ -86,6 +124,16 @@ function isWhereOp(val: unknown): val is WhereOp<unknown> {
   return typeof val === 'object' && val !== null && 'op' in val && typeof (val as Record<string, unknown>)['op'] === 'string'
 }
 
+/** Type guard: is the value a SubqueryResult (has _sql + _params fields)? */
+function isSubqueryResult(val: unknown): val is SubqueryResult<string, unknown> {
+  return (
+    typeof val === 'object' &&
+    val !== null &&
+    '_sql' in val &&
+    '_params' in val
+  )
+}
+
 /**
  * Compile a single column + condition into SQL fragment + params.
  * Handles all WhereOp variants and the shorthand equality case.
@@ -116,7 +164,11 @@ function buildFieldCondition(
     case '<=':
       return { sql: `"${key}" <= ?`, params: [op.value as BindingValue] }
     case 'IN': {
-      const vals = op.value as unknown[]
+      const inVal = op.value as InValue<unknown>
+      if (isSubqueryResult(inVal)) {
+        return { sql: `"${key}" IN ${inVal._sql}`, params: inVal._params }
+      }
+      const vals = inVal as unknown[]
       if (vals.length === 0) {
         // IN () is invalid SQL — use a false literal so no rows match
         return { sql: '1 = 0', params: [] }
@@ -125,7 +177,11 @@ function buildFieldCondition(
       return { sql: `"${key}" IN (${placeholders})`, params: vals as BindingValue[] }
     }
     case 'NOT IN': {
-      const vals = op.value as unknown[]
+      const inVal = op.value as InValue<unknown>
+      if (isSubqueryResult(inVal)) {
+        return { sql: `"${key}" NOT IN ${inVal._sql}`, params: inVal._params }
+      }
+      const vals = inVal as unknown[]
       if (vals.length === 0) {
         // NOT IN () matches everything — use a true literal
         return { sql: '1 = 1', params: [] }

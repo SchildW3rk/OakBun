@@ -41,7 +41,8 @@ export { VelnDB, BoundVelnDB, SelectBuilder, InsertBuilder, JoinBuilder } from '
 export type {
   PendingEvent, TransactionResult, QueryLog,
 }                                                            from './db/index'
-export type { JoinClause, SelectOptions, AggregateClause, WhereInput, WhereOp, WhereConditions, FieldCondition, SqlDialect } from './db/sql'
+export type { JoinClause, SelectOptions, AggregateClause, WhereInput, WhereOp, WhereConditions, FieldCondition, SqlDialect, InValue, SubqueryResult } from './db/sql'
+export { buildSubquery }                                     from './db/sql'
 // EventBus interface (structural type from db layer — the class below satisfies it)
 export type { EventBus as EventBusInterface }                 from './db/index'
 

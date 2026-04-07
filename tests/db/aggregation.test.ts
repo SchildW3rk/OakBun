@@ -159,7 +159,7 @@ describe('SelectBuilder — .columns()', () => {
   })
 
   test('.columns() with .limit()', async () => {
-    const rows = await bound.from(usersTable).columns('name').limit(2).select()
+    const rows = await bound.from(usersTable).columns('id', 'name').limit(2).select()
     expect(rows).toHaveLength(2)
   })
 

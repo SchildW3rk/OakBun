@@ -3,8 +3,8 @@ import type { SchemaMap, TableDef, InferInsert, InferUpdate, RelationMeta, Relat
 import type { HookExecutor } from '../hooks/executor'
 import { RequestEventQueue } from '../events/index'
 import { ValidationError } from '../app/types'
-import { buildInsert, buildInsertMany, buildUpdate, buildDelete, buildSelect, buildJoinSelect, buildWhere, buildSelectListFromOptions, deserializeRow } from './sql'
-import type { JoinClause, SelectOptions, WhereInput, SqlDialect, AggregateClause } from './sql'
+import { buildInsert, buildInsertMany, buildUpdate, buildDelete, buildSelect, buildJoinSelect, buildWhere, buildSelectListFromOptions, deserializeRow, buildSubquery } from './sql'
+import type { JoinClause, SelectOptions, WhereInput, SqlDialect, AggregateClause, SubqueryResult } from './sql'
 
 // ── QueryLog — per-request query accumulator ──────────────────────────────
 
@@ -550,14 +550,69 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
 
   /**
    * Restrict which columns are returned.
-   * SELECT "id", "name" FROM "table" — instead of SELECT *
    *
-   * Return type is narrowed to Pick<T, K> for full type safety.
+   * Single-column form returns a ColumnRestrictedBuilder, enabling .subquery():
+   *   db.from(usersTable).columns('id').subquery()  // → SubqueryResult<'id', number>
+   *
+   * Multi-column form returns a narrowed SelectBuilder:
+   *   db.from(usersTable).columns('id', 'name')  // → SelectBuilder<Pick<User, 'id'|'name'>, ...>
    */
-  columns<K extends keyof T & string>(...cols: K[]): SelectBuilder<Pick<T, K>, S, TRelations> {
-    // Type cast required: the builder's T changes to Pick<T, K>.
-    // At runtime the only difference is _options.columns — schema stays the same.
-    return this._clone({ columns: cols }) as unknown as SelectBuilder<Pick<T, K>, S, TRelations>
+  columns<K extends keyof T & string>(col: K): ColumnRestrictedBuilder<K, T[K], S, TRelations>
+  columns<K extends keyof T & string>(...cols: K[]): SelectBuilder<Pick<T, K>, S, TRelations>
+  columns<K extends keyof T & string>(...cols: K[]): SelectBuilder<Pick<T, K>, S, TRelations> | ColumnRestrictedBuilder<K, T[K], S, TRelations> {
+    const cloned = this._clone({ columns: cols }) as unknown as SelectBuilder<unknown, S, TRelations>
+    if (cols.length === 1) {
+      return new ColumnRestrictedBuilder<K, T[K], S, TRelations>(cloned, cols[0]!)
+    }
+    return cloned as unknown as SelectBuilder<Pick<T, K>, S, TRelations>
+  }
+
+  /**
+   * Build SELECT SQL + params without executing the query.
+   * Used internally by ColumnRestrictedBuilder.subquery().
+   */
+  _buildSelectSQL(): { sql: string; params: BindingValue[] } {
+    if (this._rawWhere.length === 0) {
+      return buildSelect(
+        this.table.name,
+        this.conditions as WhereInput<Record<string, unknown>>,
+        this._options,
+        this._dialect,
+      )
+    }
+    // Raw WHERE path — mirrors select() logic but without executing
+    const { sql: whereSql, params: whereParams } = buildWhere(
+      this.conditions as WhereInput<Record<string, unknown>>,
+      this._dialect,
+    )
+    const allWhereParts: string[] = []
+    const allParams: BindingValue[] = [...whereParams]
+    if (whereSql) allWhereParts.push(whereSql)
+    for (const raw of this._rawWhere) {
+      allWhereParts.push(raw.sql)
+      allParams.push(...raw.params)
+    }
+    const combinedWhere = allWhereParts.join(' AND ')
+    const selectList = buildSelectListFromOptions(this._options)
+    const parts: string[] = [
+      combinedWhere
+        ? `SELECT ${selectList} FROM "${this.table.name}" WHERE ${combinedWhere}`
+        : `SELECT ${selectList} FROM "${this.table.name}"`,
+    ]
+    if (this._options.orderBy && this._options.orderBy.length > 0) {
+      const clause = this._options.orderBy.map(({ col, dir }) => `"${col}" ${dir}`).join(', ')
+      parts.push(`ORDER BY ${clause}`)
+    }
+    if (this._options.limit !== undefined || this._options.offset !== undefined) {
+      const limitVal = this._options.limit !== undefined
+        ? Math.trunc(Math.max(0, this._options.limit))
+        : -1
+      parts.push(`LIMIT ${limitVal}`)
+      if (this._options.offset !== undefined) {
+        parts.push(`OFFSET ${Math.trunc(Math.max(0, this._options.offset))}`)
+      }
+    }
+    return { sql: parts.join(' '), params: allParams }
   }
 
   /**
@@ -1009,6 +1064,60 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     await this.hooks.runAfterDelete(this.table, this.ctx, current, this.queue)
 
     return current
+  }
+}
+
+// ── ColumnRestrictedBuilder ────────────────────────────────────────────────
+// Returned by SelectBuilder.columns(singleCol). Exposes only the ops needed
+// to build a subquery: .where(), .limit(), .orderBy(), and .subquery().
+// .select(), .with(), .update(), .delete() are intentionally absent.
+
+export class ColumnRestrictedBuilder<Col extends string, TCol, S extends SchemaMap, TRelations extends RelationsMap> {
+  // _builder is typed as SelectBuilder<unknown, ...> to avoid variance issues
+  // when constructing from SelectBuilder<Pick<T,K>, ...> — the runtime shape is identical.
+  constructor(
+    private readonly _builder: SelectBuilder<unknown, S, TRelations>,
+    private readonly _col: Col,
+  ) {}
+
+  where(conditions: WhereInput<Record<string, unknown>>): ColumnRestrictedBuilder<Col, TCol, S, TRelations> {
+    return new ColumnRestrictedBuilder<Col, TCol, S, TRelations>(
+      this._builder.where(conditions),
+      this._col,
+    )
+  }
+
+  limit(n: number): ColumnRestrictedBuilder<Col, TCol, S, TRelations> {
+    return new ColumnRestrictedBuilder<Col, TCol, S, TRelations>(
+      this._builder.limit(n),
+      this._col,
+    )
+  }
+
+  orderBy(col: Col, dir: 'ASC' | 'DESC' = 'ASC'): ColumnRestrictedBuilder<Col, TCol, S, TRelations> {
+    return new ColumnRestrictedBuilder<Col, TCol, S, TRelations>(
+      // _builder is SelectBuilder<unknown,...> so keyof unknown = never;
+      // col is a valid schema key at runtime — cast is safe.
+      this._builder.orderBy(col as never, dir),
+      this._col,
+    )
+  }
+
+  /**
+   * Build the SQL for this query as a subquery fragment.
+   * The result can be used directly in WHERE IN / NOT IN conditions.
+   *
+   * @example
+   * const activeIds = db.from(usersTable).columns('id').where({ active: true }).subquery()
+   * // → SubqueryResult<'id', number>
+   *
+   * const posts = await db.from(postsTable)
+   *   .where({ authorId: { op: 'IN', value: activeIds } })
+   *   .select()
+   */
+  subquery(): SubqueryResult<Col, TCol> {
+    const { sql, params } = this._builder._buildSelectSQL()
+    return buildSubquery<Col, TCol>(sql, params, this._col)
   }
 }
 

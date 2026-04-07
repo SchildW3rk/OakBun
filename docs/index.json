@@ -171,6 +171,13 @@
       "path": "sql/12-relations.md"
     },
     {
+      "title": "Subqueries",
+      "category": "sql",
+      "tags": ["subquery", "where", "in", "not-in", "type-safe"],
+      "related": ["SelectBuilder", "Where Operators", "SQL Overview"],
+      "path": "sql/13-subqueries.md"
+    },
+    {
       "title": "Plugin System",
       "category": "plugins",
       "tags": ["plugin", "extend", "context", "use"],
