@@ -87,6 +87,38 @@ export type PostUpdate = PostTypes['update']
 | `.unique()` | Add UNIQUE constraint |
 | `.default(value)` | Static default value |
 | `.defaultFn(fn)` | Dynamic default — function called at insert time |
+| `.name(sqlName)` | Set an explicit SQL column name (see [Column Name Mapping](#column-name-mapping)) |
+
+## Column Name Mapping
+
+By default, the JavaScript property key is used as the SQL column name. Use `.name()` to map a camelCase TypeScript key to a snake_case SQL column:
+
+```ts
+export const usersTable = defineTable('users', {
+  id:           column.integer().primaryKey(),
+  email:        column.text().unique(),
+  passwordHash: column.text().name('password_hash'),
+  createdAt:    column.timestamp().name('created_at').defaultFn(() => new Date()),
+}).build()
+```
+
+OakBun transparently handles the mapping in both directions:
+
+- `insert({ passwordHash: '...' })` → `INSERT INTO users (password_hash, ...) VALUES (...)`
+- `SELECT password_hash FROM users` → row returned as `{ passwordHash: '...' }`
+- `.where({ passwordHash: '...' })` → `WHERE "password_hash" = ?`
+- `UPDATE users SET password_hash = ?` when updating `passwordHash`
+
+The generated `CREATE TABLE` SQL uses the mapped column name:
+
+```sql
+CREATE TABLE IF NOT EXISTS "users" (
+  "id"            INTEGER PRIMARY KEY AUTOINCREMENT,
+  "email"         TEXT NOT NULL UNIQUE,
+  "password_hash" TEXT NOT NULL,
+  "created_at"    TEXT NOT NULL
+)
+```
 
 ## Column Types
 

@@ -16,6 +16,8 @@ export interface ColumnDef {
   unique: boolean
   defaultValue?: unknown
   defaultFn?: () => unknown
+  /** Explicit SQL column name — overrides the JS key when set. */
+  columnName?: string
 }
 
 export class Column<T> {
@@ -42,6 +44,18 @@ export class Column<T> {
 
   defaultFn(fn: () => NonNullable<T>): Column<T> {
     return new Column<T>({ ...this.def, defaultFn: fn as () => unknown })
+  }
+
+  /**
+   * Set an explicit SQL column name, independent of the JS property key.
+   * Use this to map camelCase TypeScript keys to snake_case SQL columns.
+   *
+   * @example
+   * passwordHash: column.text().name('password_hash')
+   * // INSERT uses "password_hash", SELECT returns { passwordHash: ... }
+   */
+  name(columnName: string): Column<T> {
+    return new Column<T>({ ...this.def, columnName })
   }
 }
 

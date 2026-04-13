@@ -1,5 +1,6 @@
 import type { BindingValue } from '../adapter/types'
 import type { TableDef, SchemaMap } from '../schema/table'
+import { sqlColName } from '../schema/table'
 import type { Column } from '../schema/column'
 import { VelnError } from '../errors/index'
 
@@ -401,13 +402,15 @@ export function deserializeRow<T, S extends SchemaMap>(
   row: Record<string, unknown>,
 ): T {
   const result: Record<string, unknown> = {}
-  for (const [key, col] of Object.entries(table.schema)) {
+  for (const [jsKey, col] of Object.entries(table.schema)) {
     const c = col as Column<unknown>
-    const raw = row[key]
+    const sqlName = sqlColName(jsKey, c)
+    // DB returns rows keyed by SQL column name — map back to JS key
+    const raw = row[sqlName] !== undefined ? row[sqlName] : row[jsKey]
     if (c.def.type === 'TIMESTAMP' && raw !== null && raw !== undefined) {
-      result[key] = new Date(raw as string)
+      result[jsKey] = new Date(raw as string)
     } else {
-      result[key] = raw
+      result[jsKey] = raw
     }
   }
   return result as T

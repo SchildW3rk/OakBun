@@ -351,11 +351,36 @@ export function defineTable<S extends SchemaMap>(
   return new TableBuilder<InferRow<S>, S>(name, schema)
 }
 
+/**
+ * Returns the SQL column name for a schema entry.
+ * If the column has an explicit `.name()` mapping, that is used;
+ * otherwise the JS property key is used as-is.
+ */
+export function sqlColName(jsKey: string, col: Column<any>): string {
+  return col.def.columnName ?? jsKey
+}
+
+/**
+ * Build a mapping from SQL column name → JS property key for a schema.
+ * Used to deserialize SELECT results when column name mappings are present.
+ */
+export function buildColMap(schema: SchemaMap): Map<string, string> {
+  const map = new Map<string, string>()
+  for (const [jsKey, col] of Object.entries(schema)) {
+    const sqlName = (col as Column<any>).def.columnName ?? jsKey
+    if (sqlName !== jsKey) {
+      map.set(sqlName, jsKey)
+    }
+  }
+  return map
+}
+
 // Helper: generate CREATE TABLE SQL from a TableDef (SQLite dialect)
 export function toCreateTableSql<T>(table: TableDef<T>): string {
-  const cols = Object.entries(table.schema).map(([name, col]) => {
+  const cols = Object.entries(table.schema).map(([jsKey, col]) => {
     const c = col as Column<any>
-    let def = `"${name}" `
+    const sqlName = c.def.columnName ?? jsKey
+    let def = `"${sqlName}" `
 
     switch (c.def.type) {
       case 'INTEGER':   def += 'INTEGER'; break

@@ -6,6 +6,40 @@ import { ValidationError } from '../app/types'
 import { buildInsert, buildInsertMany, buildUpdate, buildDelete, buildSelect, buildJoinSelect, buildWhere, buildSelectListFromOptions, deserializeRow, buildSubquery, buildSoftDeleteUpdate, buildUnion } from './sql'
 import type { JoinClause, SelectOptions, WhereInput, SqlDialect, AggregateClause, SubqueryResult } from './sql'
 
+/**
+ * Translate a WhereInput from JS property keys to SQL column names.
+ * Only renames keys that have an explicit `.name()` mapping on the column.
+ * Keys not found in the schema are passed through unchanged (raw SQL / join columns).
+ */
+function mapWhere<T>(
+  conditions: WhereInput<T>,
+  schema: SchemaMap,
+): WhereInput<Record<string, unknown>> {
+  if (typeof conditions !== 'object' || conditions === null || Array.isArray(conditions)) {
+    return conditions as WhereInput<Record<string, unknown>>
+  }
+  const result: Record<string, unknown> = {}
+  for (const [jsKey, val] of Object.entries(conditions as Record<string, unknown>)) {
+    const col = schema[jsKey]
+    const sqlName = col?.def.columnName ?? jsKey
+    result[sqlName] = val
+  }
+  return result as WhereInput<Record<string, unknown>>
+}
+
+/**
+ * Translate a data object from JS property keys to SQL column names for UPDATE.
+ */
+function mapDataToSql(data: Record<string, unknown>, schema: SchemaMap): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+  for (const [jsKey, val] of Object.entries(data)) {
+    const col = schema[jsKey]
+    const sqlName = col?.def.columnName ?? jsKey
+    result[sqlName] = val
+  }
+  return result
+}
+
 // ── QueryLog — per-request query accumulator ──────────────────────────────
 
 export interface QueryLog {
@@ -631,18 +665,18 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
   }
 
   _buildSelectSQL(): { sql: string; params: BindingValue[] } {
-    const conditions = this._effectiveConditions()
+    const conditions = mapWhere(this._effectiveConditions(), this.table.schema)
     if (this._rawWhere.length === 0) {
       return buildSelect(
         this.table.name,
-        conditions as WhereInput<Record<string, unknown>>,
+        conditions,
         this._options,
         this._dialect,
       )
     }
     // Raw WHERE path — mirrors select() logic but without executing
     const { sql: whereSql, params: whereParams } = buildWhere(
-      conditions as WhereInput<Record<string, unknown>>,
+      conditions,
       this._dialect,
     )
     const allWhereParts: string[] = []
@@ -764,7 +798,7 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     const alias = '_agg'
     const colExpr = col ? `"${col as string}"` : '*'
     const { sql: whereSql, params } = buildWhere(
-      this._effectiveConditions() as WhereInput<Record<string, unknown>>,
+      mapWhere(this._effectiveConditions(), this.table.schema),
       this._dialect,
     )
 
@@ -799,12 +833,12 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     let finalSql: string
     let finalParams: BindingValue[]
 
-    const effectiveConditions = this._effectiveConditions()
+    const effectiveConditions = mapWhere(this._effectiveConditions(), this.table.schema)
     if (this._rawWhere.length === 0) {
       // Fast path: no raw fragments — buildSelect handles everything
       const { sql, params } = buildSelect(
         this.table.name,
-        effectiveConditions as WhereInput<Record<string, unknown>>,
+        effectiveConditions,
         this._options,
         this._dialect,
       )
@@ -813,7 +847,7 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     } else {
       // Merge structured WHERE + raw fragments via AND, then bolt on options
       const { sql: whereSql, params: whereParams } = buildWhere(
-        effectiveConditions as WhereInput<Record<string, unknown>>,
+        effectiveConditions,
         this._dialect,
       )
       const allWhereParts: string[] = []
@@ -1012,10 +1046,11 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     // Execute UPDATE
     const pk = this.table.primaryKey
     const pkValue = (current as Record<string, unknown>)[pk as string] as BindingValue
+    const pkSqlName = this.table.schema[pk as string]?.def.columnName ?? (pk as string)
     const { sql, params } = buildUpdate(
       this.table.name,
-      finalPatch as Record<string, unknown>,
-      pk,
+      mapDataToSql(finalPatch as Record<string, unknown>, this.table.schema),
+      pkSqlName,
       pkValue,
     )
     await this.adapter.execute(sql, params)
@@ -1065,7 +1100,8 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
         }
 
         // Load current row via the tx adapter (so read is within the same TX)
-        const selectSql = `SELECT * FROM "${this.table.name}" WHERE "${pk as string}" = ?`
+        const pkSqlName = this.table.schema[pk as string]?.def.columnName ?? (pk as string)
+        const selectSql = `SELECT * FROM "${this.table.name}" WHERE "${pkSqlName}" = ?`
         const currentRows = await txAdapter.query<Record<string, unknown>>(selectSql, [pkValue as BindingValue])
         if (currentRows.length === 0) {
           throw new Error(`updateMany: record with ${pk as string}=${String(pkValue)} not found`)
@@ -1082,7 +1118,7 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
         // Execute UPDATE
         const { sql, params } = buildUpdate(
           this.table.name,
-          finalPatch as Record<string, unknown>,
+          mapDataToSql(finalPatch as Record<string, unknown>, this.table.schema),
           pk,
           pkValue as BindingValue,
         )
@@ -1127,7 +1163,8 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
     // Execute DELETE
     const pk = this.table.primaryKey
     const pkValue = (current as Record<string, unknown>)[pk as string] as BindingValue
-    const { sql, params } = buildDelete(this.table.name, pk, pkValue)
+    const pkSqlName = this.table.schema[pk as string]?.def.columnName ?? (pk as string)
+    const { sql, params } = buildDelete(this.table.name, pkSqlName, pkValue)
     await this.adapter.execute(sql, params)
 
     // Run afterDelete hooks — events collected into queue, not emitted immediately
@@ -1288,11 +1325,12 @@ export class SoftDeleteBuilder<T, S extends SchemaMap> {
         `Add .withSoftDelete('deletedAt') to the table definition.`,
       )
     }
+    const colSqlName = this.table.schema[col as string]?.def.columnName ?? (col as string)
     const { sql, params } = buildSoftDeleteUpdate(
       this.table.name,
-      col as string,
+      colSqlName,
       this._value,
-      this._conditions as WhereInput<Record<string, unknown>>,
+      mapWhere(this._conditions, this.table.schema),
       this._dialect,
     )
     await this.adapter.execute(sql, params)
@@ -1492,12 +1530,14 @@ export class InsertBuilder<T, S extends SchemaMap> {
     return results
   }
 
-  /** Serialize values for storage. Date → ISO string. Drops undefined values. */
+  /** Serialize values for storage. Maps JS keys → SQL column names. Date → ISO string. Drops undefined. */
   private _serializeForInsert(data: Record<string, unknown>): Record<string, unknown> {
     const result: Record<string, unknown> = {}
-    for (const [key, val] of Object.entries(data)) {
+    for (const [jsKey, val] of Object.entries(data)) {
       if (val === undefined) continue
-      result[key] = val instanceof Date ? val.toISOString() : val
+      const col = this.table.schema[jsKey]
+      const sqlName = col?.def.columnName ?? jsKey
+      result[sqlName] = val instanceof Date ? val.toISOString() : val
     }
     return result
   }
