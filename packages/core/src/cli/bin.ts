@@ -1,5 +1,3 @@
-#!/usr/bin/env bun
-
 import { loadConfig }       from './config/loader'
 import { discoverCommands } from './discovery/commands'
 import { migrateRun }       from './commands/migrate/run'
