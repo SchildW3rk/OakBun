@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+### Patch Changes
+
+- 7d16807: fix(cli): remove duplicate shebang that caused syntax error when using `bunx oak` or `node_modules/.bin/oak`
+
 ## 0.2.0
 
 ### Minor Changes
