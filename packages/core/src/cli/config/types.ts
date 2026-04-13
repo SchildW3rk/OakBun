@@ -1,4 +1,5 @@
 import type { VelnAdapter } from '../../adapter/types'
+import type { BoundVelnDB } from '../../db/index'
 
 export interface VelnConfig {
   adapter?:    VelnAdapter
@@ -15,11 +16,16 @@ export interface CommandOption {
   default?:    string
 }
 
+export interface CommandContext {
+  db:      BoundVelnDB
+  adapter: VelnAdapter
+}
+
 export interface CommandDef {
   _name:        string
   _description: string
   _options:     CommandOption[]
-  _action:      (args: Record<string, string>) => Promise<void> | void
+  _action:      (args: Record<string, string>, ctx: CommandContext) => Promise<void> | void
 }
 
 class CommandBuilder {
@@ -38,7 +44,7 @@ class CommandBuilder {
     return this
   }
 
-  action(fn: (args: Record<string, string>) => Promise<void> | void): CommandDef {
+  action(fn: (args: Record<string, string>, ctx: CommandContext) => Promise<void> | void): CommandDef {
     return {
       _name:        this._name,
       _description: this._desc,

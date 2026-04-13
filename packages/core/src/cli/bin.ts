@@ -1,4 +1,5 @@
 import { loadConfig }       from './config/loader'
+import { loadAdapter }      from './commands/migrate/adapter'
 import { discoverCommands } from './discovery/commands'
 import { migrateRun }       from './commands/migrate/run'
 import { migrateStatus }    from './commands/migrate/status'
@@ -6,6 +7,8 @@ import { migrateGenerate }  from './commands/migrate/generate'
 import { migrateRollback }  from './commands/migrate/rollback'
 import { makeMigration }    from './commands/make/migration'
 import { tinker }           from './commands/tinker'
+import { BoundVelnDB }      from '../db/index'
+import { HookExecutor }     from '../hooks/executor'
 import type { VelnConfig }  from './config/types'
 
 type BuiltinHandler = (args: string[], config: VelnConfig) => Promise<void>
@@ -85,8 +88,11 @@ async function main(): Promise<void> {
   const custom  = customs.find(c => c._name === command)
 
   if (custom) {
-    const parsed = parseArgs(rest, custom._options)
-    await custom._action(parsed)
+    const parsed  = parseArgs(rest, custom._options)
+    const adapter = await loadAdapter(config)
+    const db      = new BoundVelnDB(adapter, new HookExecutor(), {})
+    await custom._action(parsed, { db, adapter })
+    await adapter.close()
     process.exit(0)
   }
 

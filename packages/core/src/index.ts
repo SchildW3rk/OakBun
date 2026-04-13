@@ -124,7 +124,7 @@ export type { CronDef, CronBuilder, CronCtx, CronBuildOptions, LogLevel, CronLoc
 
 // CLI config helpers
 export { defineConfig, defineCommand } from './cli/index'
-export type { VelnConfig, CommandDef, CommandOption } from './cli/index'
+export type { VelnConfig, CommandDef, CommandOption, CommandContext } from './cli/index'
 
 // Errors
 export {
