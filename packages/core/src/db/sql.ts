@@ -409,6 +409,8 @@ export function deserializeRow<T, S extends SchemaMap>(
     const raw = row[sqlName] !== undefined ? row[sqlName] : row[jsKey]
     if (c.def.type === 'TIMESTAMP' && raw !== null && raw !== undefined) {
       result[jsKey] = new Date(raw as string)
+    } else if (c.def.type === 'BOOLEAN' && typeof raw === 'number') {
+      result[jsKey] = raw === 1
     } else {
       result[jsKey] = raw
     }
