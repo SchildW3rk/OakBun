@@ -120,7 +120,7 @@ interface CronLockAdapter {
 Pass to `dbPlugin`:
 
 ```ts
-app.use(dbPlugin(adapter, { cronLock: myLockAdapter }))
+app.plugin(dbPlugin(adapter, { cronLock: myLockAdapter }))
 ```
 
 The built-in `NoOpCronLockAdapter` always acquires — suitable for single-instance deployments.

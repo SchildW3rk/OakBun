@@ -31,13 +31,13 @@ import { createApp, dbPlugin } from 'oakbun'
 import { SQLiteAdapter } from 'oakbun/adapter/sqlite'
 
 const app = createApp()
-app.use(dbPlugin(new SQLiteAdapter({ filename: 'app.db' })))
+app.plugin(dbPlugin(new SQLiteAdapter({ filename: 'app.db' })))
 ```
 
 ### With Query Logging
 
 ```ts
-app.use(dbPlugin(adapter, {
+app.plugin(dbPlugin(adapter, {
   enabled:     true,
   logQueries:  true,
   slowQueryMs: 200,
@@ -83,7 +83,7 @@ function loggerPlugin(options?: LoggerOptions): Plugin<BaseCtx, { logger: VelnLo
 ```ts
 import { loggerPlugin } from 'oakbun'
 
-app.use(loggerPlugin({ level: 'info' }))
+app.plugin(loggerPlugin({ level: 'info' }))
 
 // In a handler:
 ctx.logger.info('User created', { id: user.id })
@@ -126,7 +126,7 @@ function eventBusPlugin(
 import { eventBusPlugin } from 'oakbun'
 
 const eventsPlugin = eventBusPlugin()
-app.use(eventsPlugin)
+app.plugin(eventsPlugin)
 
 // Access the shared bus (e.g. to register handlers at startup)
 eventsPlugin.bus.on('user.created', async (payload, ctx) => {

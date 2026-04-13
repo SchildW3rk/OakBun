@@ -14,7 +14,7 @@ OakBun can log SQL queries, measure execution time, and warn when a request make
 Configure via `dbPlugin`:
 
 ```ts
-app.use(dbPlugin(adapter, {
+app.plugin(dbPlugin(adapter, {
   enabled:     true,         // enable query logging (default: false)
   slowQueryMs: 100,          // warn on queries slower than 100ms
   logQueries:  true,         // log every query (verbose)

@@ -40,7 +40,7 @@ const usersModule = defineModule('/users')
 
 // 3. Create app
 const app = createApp()
-app.use(dbPlugin(new SQLiteAdapter({ filename: 'app.db' })))
+app.plugin(dbPlugin(new SQLiteAdapter({ filename: 'app.db' })))
 app.register(usersModule)
 app.listen(3000)
 ```
@@ -63,9 +63,9 @@ Plugins are applied in registration order. Register `loggerPlugin` → `eventBus
 ```ts
 const app = createApp()
 
-app.use(loggerPlugin())
-app.use(eventBusPlugin())
-app.use(dbPlugin(adapter))
+app.plugin(loggerPlugin())
+app.plugin(eventBusPlugin())
+app.plugin(dbPlugin(adapter))
 
 app.register(usersModule)
 app.register(postsModule)

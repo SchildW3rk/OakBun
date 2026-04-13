@@ -84,7 +84,7 @@ class RedisCronLock implements CronLockAdapter {
 Pass to `dbPlugin`:
 
 ```ts
-app.use(dbPlugin(adapter, {
+app.plugin(dbPlugin(adapter, {
   cronLock: new RedisCronLock(redis),
 }))
 ```

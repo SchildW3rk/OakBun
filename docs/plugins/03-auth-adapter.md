@@ -25,8 +25,8 @@ import { SQLiteAdapter } from 'oakbun/adapter/sqlite'
 const adapter = new SQLiteAdapter({ filename: 'app.db' })
 
 const app = createApp()
-app.use(dbPlugin(adapter))
-app.use(betterAuthPlugin(
+app.plugin(dbPlugin(adapter))
+app.plugin(betterAuthPlugin(
   {
     secret:         process.env.AUTH_SECRET!,
     baseUrl:        'http://localhost:3000',

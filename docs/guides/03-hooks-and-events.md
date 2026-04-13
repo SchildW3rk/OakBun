@@ -94,7 +94,7 @@ Or via `eventBusPlugin`:
 
 ```ts
 const eventsPlugin = eventBusPlugin()
-app.use(eventsPlugin)
+app.plugin(eventsPlugin)
 
 eventsPlugin.bus.on('user.created', async (payload) => {
   console.log('New user:', payload.email)

@@ -29,7 +29,7 @@ With 100 posts, this makes 101 queries.
 Enable N+1 detection in `dbPlugin`:
 
 ```ts
-app.use(dbPlugin(adapter, {
+app.plugin(dbPlugin(adapter, {
   enabled:     true,
   n1Threshold: 10,   // warn if a single request makes more than 10 queries
 }))

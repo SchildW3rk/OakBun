@@ -26,7 +26,7 @@ function secureHeadersPlugin(options?: SecureHeadersOptions): Plugin
 ```ts
 import { createApp, secureHeadersPlugin } from 'oakbun'
 
-app.use(secureHeadersPlugin())
+app.plugin(secureHeadersPlugin())
 ```
 
 ### Default Headers
@@ -55,7 +55,7 @@ app.use(secureHeadersPlugin())
 All fields are optional. Pass a string to override, `false` to omit, or omit entirely to use the default.
 
 ```ts
-app.use(secureHeadersPlugin({
+app.plugin(secureHeadersPlugin({
   contentSecurityPolicy: 'strict',
   xFrameOptions:         false,     // omit this header
   referrerPolicy:        'no-referrer',
@@ -79,7 +79,7 @@ function corsPlugin(options?: CorsOptions): Plugin
 ```ts
 import { corsPlugin } from 'oakbun'
 
-app.use(corsPlugin({
+app.plugin(corsPlugin({
   origin:      ['http://localhost:3000', 'https://myapp.com'],
   credentials: true,
 }))
@@ -113,7 +113,7 @@ function csrfPlugin(options?: CsrfOptions): Plugin
 ```ts
 import { csrfPlugin } from 'oakbun'
 
-app.use(csrfPlugin())
+app.plugin(csrfPlugin())
 ```
 
 ### How It Works
@@ -140,7 +140,7 @@ Rejects requests with a body exceeding a configured size.
 ```ts
 import { bodySizeLimitPlugin } from 'oakbun'
 
-app.use(bodySizeLimitPlugin({ maxBytes: 2 * 1024 * 1024 }))  // 2 MB
+app.plugin(bodySizeLimitPlugin({ maxBytes: 2 * 1024 * 1024 }))  // 2 MB
 ```
 
 ---
@@ -152,7 +152,7 @@ Generates a unique ID for each request and attaches it to `ctx.requestId`.
 ```ts
 import { requestIdPlugin } from 'oakbun'
 
-app.use(requestIdPlugin())
+app.plugin(requestIdPlugin())
 
 // In a handler:
 ctx.requestId  // 'req_abc123...'

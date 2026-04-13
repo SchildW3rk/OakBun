@@ -21,7 +21,7 @@ function compressionPlugin(options?: CompressionOptions): Plugin<BaseCtx, Record
 import { createApp, compressionPlugin } from 'oakbun'
 
 const app = createApp()
-app.use(compressionPlugin())
+app.plugin(compressionPlugin())
 ```
 
 ## CompressionOptions
@@ -37,7 +37,7 @@ app.use(compressionPlugin())
 ## Example with Options
 
 ```ts
-app.use(compressionPlugin({
+app.plugin(compressionPlugin({
   encoding:  'gzip',
   threshold: 512,    // compress responses > 512 bytes
 }))

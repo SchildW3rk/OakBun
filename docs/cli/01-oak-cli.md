@@ -185,22 +185,43 @@ Place command files in the directory configured as `commands` (default: `./src/c
 ```ts
 // src/commands/seed.ts
 import { defineCommand } from 'oakbun'
+import { usersTable } from '../schema/users'
 
 export default defineCommand('seed')
-  .description('Seed the database with test data')
-  .option('--count <n>', 'Number of records to create', '10')
-  .action(async (args) => {
-    const count = parseInt(args.count, 10)
-    console.log(`Seeding ${count} users...`)
-    // ... seeding logic
+  .description('Seed the database')
+  .option('--email <email>', 'Admin email', 'admin@example.com')
+  .action(async (args, ctx) => {
+    // ctx.db — BoundVelnDB from the adapter in oak.config.ts
+    const existing = await ctx.db.from(usersTable)
+      .where({ email: args.email })
+      .first()
+
+    if (existing) {
+      console.log(`User "${args.email}" already exists — skipping`)
+      return
+    }
+
+    const user = await ctx.db.into(usersTable).insert({
+      email: args.email,
+      passwordHash: await Bun.password.hash('changeme'),
+    })
+    console.log(`Created user (id=${user.id})`)
   })
+```
+
+For raw SQL via `ctx.adapter`:
+
+```ts
+.action(async (args, ctx) => {
+  await ctx.adapter.execute('DELETE FROM sessions WHERE expires_at < ?', [Date.now()])
+})
 ```
 
 Run it:
 
 ```sh
 oak seed
-oak seed --count 50
+oak seed --email admin@myapp.com
 ```
 
 ### CommandDef API
@@ -209,8 +230,10 @@ oak seed --count 50
 defineCommand(name: string)
   .description(text: string)
   .option(flag: string, description: string, default?: string)
-  .action(fn: (args: Record<string, string>) => Promise<void> | void)
+  .action(fn: (args: Record<string, string>, ctx: CommandContext) => Promise<void> | void)
 ```
+
+`ctx.db` is a `BoundVelnDB` scoped to the adapter from `oak.config.ts`. `ctx.adapter` gives access to the raw adapter for executing plain SQL.
 
 The `flag` format follows `--flag-name <value>` for required values or `--flag-name` for boolean flags.
 

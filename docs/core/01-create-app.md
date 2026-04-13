@@ -23,21 +23,29 @@ import { SQLiteAdapter } from 'oakbun/adapter/sqlite'
 
 const app = createApp()
 
-app.use(dbPlugin(new SQLiteAdapter({ filename: 'app.db' })))
+app.plugin(dbPlugin(new SQLiteAdapter({ filename: 'app.db' })))
 app.register(usersModule)
 app.listen(3000)
 ```
 
 ## Methods
 
-### `app.use(plugin)`
+### `app.plugin(plugin)`
 
-Register a plugin or middleware. Plugins run in registration order on every request.
+Register a plugin. Plugins run in registration order and extend `ctx` for every request.
 
 ```ts
-app.use(loggerPlugin())
-app.use(eventBusPlugin())
-app.use(dbPlugin(adapter))
+app.plugin(loggerPlugin())
+app.plugin(eventBusPlugin())
+app.plugin(dbPlugin(adapter))
+```
+
+### `app.use(serviceOrMiddleware)`
+
+Register a global service or middleware. Use this for `ServiceDef` instances or `MiddlewareDef` — not for plugins.
+
+```ts
+app.use(MyGlobalService)
 ```
 
 ### `app.register(module)`

@@ -48,10 +48,10 @@ App shutdown (app.close() / SIGTERM)
 Plugins are applied in order. A plugin that `.requires(['db'])` will throw at startup if `dbPlugin` is not registered before it:
 
 ```ts
-app.use(loggerPlugin())     // 1
-app.use(eventBusPlugin())   // 2
-app.use(dbPlugin(adapter))  // 3 — ctx.db now available
-app.use(statsPlugin)        // 4 — can use ctx.db, ctx.logger
+app.plugin(loggerPlugin())     // 1
+app.plugin(eventBusPlugin())   // 2
+app.plugin(dbPlugin(adapter))  // 3 — ctx.db now available
+app.plugin(statsPlugin)        // 4 — can use ctx.db, ctx.logger
 ```
 
 ## Module-Scoped Plugins

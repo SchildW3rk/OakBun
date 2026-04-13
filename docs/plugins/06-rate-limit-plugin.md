@@ -21,7 +21,7 @@ function rateLimitPlugin(options: RateLimitOptions): Plugin<BaseCtx, Record<neve
 import { createApp, rateLimitPlugin } from 'oakbun'
 
 const app = createApp()
-app.use(rateLimitPlugin({
+app.plugin(rateLimitPlugin({
   max:      100,    // 100 requests
   windowMs: 60_000, // per minute
 }))
@@ -32,7 +32,7 @@ app.use(rateLimitPlugin({
 When your app runs behind a reverse proxy (nginx, Cloudflare), enable `trustProxy` to read the real client IP from `X-Forwarded-For`:
 
 ```ts
-app.use(rateLimitPlugin({
+app.plugin(rateLimitPlugin({
   max:        200,
   windowMs:   60_000,
   trustProxy: true,
@@ -55,7 +55,7 @@ app.use(rateLimitPlugin({
 Rate limit by user ID instead of IP:
 
 ```ts
-app.use(rateLimitPlugin({
+app.plugin(rateLimitPlugin({
   max:         1000,
   windowMs:    60_000,
   keyResolver: (ctx) => ctx.jwtUser?.sub ?? ctx.req.headers.get('x-forwarded-for') ?? 'anonymous',
@@ -85,7 +85,7 @@ const store = new InMemoryStore(
   100_000,  // max entries before hard eviction
 )
 
-app.use(rateLimitPlugin({ max: 100, windowMs: 60_000, store }))
+app.plugin(rateLimitPlugin({ max: 100, windowMs: 60_000, store }))
 ```
 
 ## Response on Limit

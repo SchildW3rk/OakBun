@@ -16,7 +16,7 @@ import { createApp, dbPlugin } from 'oakbun'
 import { SQLiteAdapter } from 'oakbun/adapter/sqlite'
 
 const app = createApp()
-app.use(dbPlugin(new SQLiteAdapter({ filename: 'app.db' })))
+app.plugin(dbPlugin(new SQLiteAdapter({ filename: 'app.db' })))
 ```
 
 ## Adapters

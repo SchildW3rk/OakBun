@@ -68,9 +68,9 @@ import { usersModule } from './modules/users.module'
 
 const app = createApp()
 
-app.use(loggerPlugin())
-app.use(eventBusPlugin())
-app.use(dbPlugin(new SQLiteAdapter({ filename: 'app.db' })))
+app.plugin(loggerPlugin())
+app.plugin(eventBusPlugin())
+app.plugin(dbPlugin(new SQLiteAdapter({ filename: 'app.db' })))
 
 app.register(usersModule)
 
