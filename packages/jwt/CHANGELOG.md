@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.0
+
+### Patch Changes
+
+- Updated dependencies [a9da1d2]
+  - oakbun@0.3.0
+
 ## 1.0.0
 
 ### Patch Changes

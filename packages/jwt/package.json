@@ -1,6 +1,6 @@
 {
   "name": "@oakbun/jwt",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "JWT plugin for the OakBun framework.",
   "author": "René (SchildW3rk)",
   "license": "MIT",
@@ -43,7 +43,7 @@
     "jose": "^6.2.2"
   },
   "peerDependencies": {
-    "oakbun": ">=0.2.2"
+    "oakbun": ">=0.3.0"
   },
   "devDependencies": {
     "oakbun": "workspace:*"

@@ -1,6 +1,6 @@
 {
   "name": "@oakbun/logger",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Structured logger plugin for the OakBun framework.",
   "author": "René (SchildW3rk)",
   "license": "MIT",
@@ -41,7 +41,7 @@
     "prepublishOnly": "bun run build && bunx tsc --noEmit"
   },
   "peerDependencies": {
-    "oakbun": ">=0.2.2"
+    "oakbun": ">=0.3.0"
   },
   "devDependencies": {
     "oakbun": "workspace:*",
