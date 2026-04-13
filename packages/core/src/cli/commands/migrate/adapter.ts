@@ -15,7 +15,10 @@ import type { VelnConfig } from '../../config/types'
 export async function loadAdapter(config: VelnConfig = {}): Promise<VelnAdapter> {
   const cwd = process.cwd()
 
-  // 1. Try to load adapter exported from project's db entry point
+  // 1. Use adapter from config if provided
+  if (config.adapter) return config.adapter
+
+  // 2. Try to load adapter exported from project's db entry point
   const candidates = [
     'src/db.ts',
     'src/db/index.ts',
@@ -42,16 +45,15 @@ export async function loadAdapter(config: VelnConfig = {}): Promise<VelnAdapter>
 
   const { SQLiteAdapter } = await import('../../../adapter/sqlite')
 
-  // 2. Find a *.sqlite file in the project root
+  // 3. Find a *.sqlite or *.db file in the project root
   const sqliteFiles = await Array.fromAsync(
-    new Bun.Glob('*.sqlite').scan({ cwd, onlyFiles: true }),
+    new Bun.Glob('*.{sqlite,db}').scan({ cwd, onlyFiles: true }),
   ).catch(() => [] as string[])
 
   if (sqliteFiles.length > 0) {
     return new SQLiteAdapter({ path: resolve(cwd, sqliteFiles[0]) })
   }
 
-  // 3. In-memory fallback (useful for migrate:generate with no real DB)
-  void config  // reserved for future: config.database path override
+  // 4. In-memory fallback (useful for migrate:generate with no real DB)
   return new SQLiteAdapter()
 }

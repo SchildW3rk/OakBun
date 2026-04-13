@@ -2,7 +2,7 @@ import { resolve } from 'node:path'
 import type { VelnConfig } from './types'
 
 export async function loadConfig(): Promise<VelnConfig> {
-  const candidates = ['veln.config.ts', 'veln.config.js']
+  const candidates = ['oak.config.ts', 'oak.config.js', 'veln.config.ts', 'veln.config.js']
 
   for (const rel of candidates) {
     const abs = resolve(process.cwd(), rel)

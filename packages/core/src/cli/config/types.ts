@@ -1,4 +1,7 @@
+import type { VelnAdapter } from '../../adapter/types'
+
 export interface VelnConfig {
+  adapter?:    VelnAdapter
   features?:   string   // default: './src/features'
   schema?:     string   // default: './src/schema'
   tables?:     string   // default: './src/tables'
