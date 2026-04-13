@@ -44,7 +44,7 @@
     "better-auth": "^1.5.5"
   },
   "peerDependencies": {
-    "oakbun": ">=0.4.0"
+    "oakbun": ">=0.4.1"
   },
   "devDependencies": {
     "oakbun": "workspace:*"
