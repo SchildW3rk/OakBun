@@ -1,6 +1,6 @@
 {
   "name": "@oakbun/auth",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Better Auth integration plugin for the OakBun framework.",
   "author": "René (SchildW3rk)",
   "license": "MIT",
@@ -44,7 +44,7 @@
     "better-auth": "^1.5.5"
   },
   "peerDependencies": {
-    "oakbun": ">=0.3.0"
+    "oakbun": ">=0.4.0"
   },
   "devDependencies": {
     "oakbun": "workspace:*"

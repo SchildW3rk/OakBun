@@ -1,6 +1,6 @@
 {
   "name": "@oakbun/scalar",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Scalar API docs plugin for the OakBun framework.",
   "author": "René (SchildW3rk)",
   "license": "MIT",
@@ -42,7 +42,7 @@
     "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
-    "oakbun": ">=0.3.0"
+    "oakbun": ">=0.4.0"
   },
   "bugs": {
     "url": "https://github.com/SchildW3rk/OakBun/issues"
