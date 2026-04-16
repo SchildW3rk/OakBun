@@ -9,6 +9,14 @@
 
 OakBun is a structured backend framework built for [Bun](https://bun.sh). It gives you a clear, composable architecture: **modules** own routes, **plugins** extend the request context, **guards** gate access, **services** hold business logic, and the **ORM** speaks your schema directly. Everything is TypeScript-first with full type inference — no decorators, no reflection, no runtime surprises.
 
+**Actively Developed & Battle-Tested**
+
+OakBun is not a theoretical project. It is actively developed and driven by real-world needs — currently powering [Kontor](https://github.com/SchildW3rk), a full-scale production accounting and invoicing SaaS built as a SevDesk alternative. Every feature in OakBun exists because it was needed to solve a real backend problem.
+
+**The Perfect Match: LiteForge**
+
+OakBun is frontend-agnostic, but it pairs naturally with [LiteForge](https://github.com/CodingRuo/liteforge) — a fast, reactive frontend framework built with the same philosophy. Together they form a complete end-to-end stack for modern web development.
+
 ---
 
 ## Install
