@@ -6,6 +6,24 @@ export interface PostgresConfig {
   idleTimeout?: number
 }
 
+// Bun.SQL.unsafe() requires $1, $2, ... positional placeholders — not the ? style
+// used by SQLite. Convert before every call.
+function toPositional(sql: string): string {
+  let i = 0
+  return sql.replace(/\?/g, () => `$${++i}`)
+}
+
+// When there are no params, call unsafe(sql) without a second argument.
+// Passing an empty array causes Bun.SQL to parse the SQL for placeholders,
+// which misinterprets commas inside type expressions like NUMERIC(12,2).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function unsafeCall(client: any, sql: string, params: BindingValue[]): any {
+  const positional = toPositional(sql)
+  return params.length > 0
+    ? client.unsafe(positional, params)
+    : client.unsafe(positional)
+}
+
 export class PostgresAdapter implements VelnAdapter {
   readonly dialect = 'postgres' as const
   // Typed as any: Bun.SQL's instance type is not reliably exported across
@@ -31,17 +49,15 @@ export class PostgresAdapter implements VelnAdapter {
 
   async query<T>(sql: string, params: BindingValue[] = []): Promise<T[]> {
     const t0 = performance.now()
-    // .unsafe() accepts a raw SQL string + positional params array
-    const rows = await this.sql.unsafe(sql, params) as T[]
+    const rows = await unsafeCall(this.sql, sql, params) as T[]
     this.onQuery?.({ sql, params, durationMs: performance.now() - t0, type: 'query' })
     return rows
   }
 
   async execute(sql: string, params: BindingValue[] = []): Promise<ExecuteResult> {
     const t0 = performance.now()
-    const result = await this.sql.unsafe(sql, params)
+    const result = await unsafeCall(this.sql, sql, params)
     this.onQuery?.({ sql, params, durationMs: performance.now() - t0, type: 'execute' })
-    // Bun.SQL result exposes .count for rows affected on DML statements
     const rowsAffected = typeof result?.count === 'number' ? result.count : (result?.length ?? 0)
     return { rowsAffected }  // lastInsertId not available without RETURNING clause
   }
@@ -50,9 +66,9 @@ export class PostgresAdapter implements VelnAdapter {
     return this.sql.begin(async (tx: any) => {
       const txAdapter: VelnAdapter = {
         dialect:     'postgres',
-        query:       (s, p = []) => tx.unsafe(s, p),
+        query:       (s, p = []) => unsafeCall(tx, s, p),
         execute:     async (s, p = []) => {
-          const r = await tx.unsafe(s, p)
+          const r = await unsafeCall(tx, s, p)
           const rowsAffected = typeof r?.count === 'number' ? r.count : (r?.length ?? 0)
           return { rowsAffected }
         },

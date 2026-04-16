@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.2
+
+### Patch Changes
+
+- fix(postgres): convert ? placeholders to $1,$2,... for Bun.SQL.unsafe(); pass no params array when params is empty to avoid misinterpreting NUMERIC(p,s) comma syntax (closes #10, closes #11)
+
 ## 0.5.1
 
 ### Patch Changes

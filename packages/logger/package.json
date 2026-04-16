@@ -41,7 +41,7 @@
     "prepublishOnly": "bun run build && bunx tsc --noEmit"
   },
   "peerDependencies": {
-    "oakbun": ">=0.5.1"
+    "oakbun": ">=0.5.2"
   },
   "devDependencies": {
     "oakbun": "workspace:*",
