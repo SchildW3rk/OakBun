@@ -12,6 +12,7 @@ export interface MySQLConfig {
 }
 
 export class MySQLAdapter implements VelnAdapter {
+  readonly dialect = 'mysql' as const
   // Typed as any: Bun.SQL's instance type is not reliably exported across
   // bun-types versions and the class is a Bun global — no stable import path.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

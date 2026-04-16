@@ -1,16 +1,22 @@
 import type { VelnAdapter } from '../../adapter/types'
 import type { MigrationRecord } from './types'
 
-const CREATE_TRACKING_TABLE = `
-  CREATE TABLE IF NOT EXISTS "_veln_migrations" (
-    "id"         INTEGER PRIMARY KEY AUTOINCREMENT,
-    "name"       TEXT NOT NULL UNIQUE,
-    "applied_at" TEXT NOT NULL
-  )
-`
+function buildCreateTableSql(tableName: string, dialect: VelnAdapter['dialect']): string {
+  const pk = dialect === 'sqlite'
+    ? '"id" INTEGER PRIMARY KEY AUTOINCREMENT'
+    : '"id" INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY'
+
+  return `
+    CREATE TABLE IF NOT EXISTS "${tableName}" (
+      ${pk},
+      "name"       TEXT NOT NULL UNIQUE,
+      "applied_at" TEXT NOT NULL
+    )
+  `
+}
 
 export async function ensureTable(adapter: VelnAdapter, tableName: string): Promise<void> {
-  const sql = CREATE_TRACKING_TABLE.replace('"_veln_migrations"', `"${tableName}"`)
+  const sql = buildCreateTableSql(tableName, adapter.dialect)
   await adapter.execute(sql)
 }
 

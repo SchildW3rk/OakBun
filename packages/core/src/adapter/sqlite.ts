@@ -11,6 +11,7 @@ export interface SQLiteConfig {
 const STMT_CACHE_MAX = 500
 
 export class SQLiteAdapter implements VelnAdapter {
+  readonly dialect = 'sqlite' as const
   private readonly db: Database
   // LRU cache for prepared statements — Map preserves insertion order.
   // On cache hit: entry is moved to end (most recently used).

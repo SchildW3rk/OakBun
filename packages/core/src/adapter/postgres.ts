@@ -7,6 +7,7 @@ export interface PostgresConfig {
 }
 
 export class PostgresAdapter implements VelnAdapter {
+  readonly dialect = 'postgres' as const
   // Typed as any: Bun.SQL's instance type is not reliably exported across
   // bun-types versions and the class is a Bun global — no stable import path.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

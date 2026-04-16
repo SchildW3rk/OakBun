@@ -27,11 +27,18 @@ export interface QueryLogEntry {
   type:       'query' | 'execute'
 }
 
+export type AdapterDialect = 'sqlite' | 'postgres' | 'mysql'
+
 export interface VelnAdapter {
   query<T = Record<string, unknown>>(sql: string, params?: BindingValue[]): Promise<T[]>
   execute(sql: string, params?: BindingValue[]): Promise<ExecuteResult>
   transaction<T>(fn: (tx: VelnAdapter) => Promise<T>): Promise<T>
   close(): Promise<void>
+  /**
+   * Dialect identifier — used by internal tooling (e.g. migrations) to emit
+   * dialect-appropriate SQL. Set by each adapter implementation.
+   */
+  readonly dialect: AdapterDialect
   /**
    * Optional query observer. When set, the adapter calls this after every
    * query() and execute() with timing and SQL details.
