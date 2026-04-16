@@ -41,7 +41,7 @@
     "prepublishOnly": "bun run build"
   },
   "peerDependencies": {
-    "oakbun": ">=0.5.3",
+    "oakbun": ">=0.5.4",
     "zod": "^3.0.0 || ^4.0.0"
   },
   "devDependencies": {

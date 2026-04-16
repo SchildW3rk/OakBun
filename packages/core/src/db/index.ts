@@ -614,7 +614,10 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
   /** Add an ORDER BY clause. Multiple calls accumulate in order. */
   orderBy(col: keyof T & string, dir: 'ASC' | 'DESC' = 'ASC'): SelectBuilder<T, S, TRelations> {
     const existing = this._options.orderBy ?? []
-    return this._clone({ orderBy: [...existing, { col, dir }] })
+    // Resolve JS key → SQL column name via schema so .name() mappings are respected
+    const schemaCol = this.table.schema[col as string]
+    const sqlCol = schemaCol?.def.columnName ?? col as string
+    return this._clone({ orderBy: [...existing, { col: sqlCol, dir }] })
   }
 
   /**

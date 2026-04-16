@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.4
+
+### Patch Changes
+
+- fix(orm): orderBy() and WHERE operator conditions now resolve JS keys to SQL column names via .name() mapping (closes #13)
+
 ## 0.5.3
 
 ### Patch Changes
