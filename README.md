@@ -126,16 +126,25 @@ plugin guard(s)   ← .guard() on definePlugin
 
 ### Services
 
-Services are plain TypeScript classes registered on a module. OakBun instantiates them once and injects them into `ctx` — no DI container needed.
+Services encapsulate business logic and are injected into `ctx` by the module that uses them.
 
 ```ts
 import { defineService } from 'oakbun'
+import { UserModel }     from './user.model'
 
-export const UserService = defineService('users', (ctx) => ({
-  findAll: () => ctx.db.from(usersTable).select(),
-  findById: (id: number) => ctx.db.from(usersTable).where({ id }).first(),
-  create: (data: NewUser) => ctx.db.into(usersTable).insert(data),
-}))
+export const UserService = defineService('users')
+  .use(UserModel)
+  .define(({ UserModel, logger }) => ({
+    findAll: () => {
+      logger.debug('findAll')
+      return UserModel.findAll()
+    },
+    findById: async (id: number) => {
+      const user = await UserModel.findById(id)
+      if (!user) throw new NotFoundError(`User ${id} not found`)
+      return user
+    },
+  }))
 
 // In your module:
 defineModule('/users').use(UserService)
