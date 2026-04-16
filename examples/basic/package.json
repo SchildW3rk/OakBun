@@ -7,7 +7,7 @@
     "start": "bun src/index.ts",
     "ws": "bun src/ws-client.ts",
     "migrate": "oak migrate:run",
-    "db:status": "oak migrate:status",
+    "db:status": "oak migrate:status"
   },
   "dependencies": {
     "oakbun": "workspace:*",

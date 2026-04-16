@@ -1,5 +1,12 @@
 # Changelog
 
+## 4.0.0
+
+### Patch Changes
+
+- Updated dependencies [15a04df]
+  - oakbun@0.5.0
+
 ## 3.0.0
 
 ### Patch Changes
