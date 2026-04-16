@@ -5,6 +5,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![Bun](https://img.shields.io/badge/Bun-%3E%3D1.1.0-f472b6)](https://bun.sh)
 
+> **⚠️ STATUS: ALPHA / EXPERIMENTAL**
+> **This framework is currently in heavy active development. It is used in production for specific projects (Kontor), but the API is subject to breaking changes. Use at your own risk. Expect bugs!**
+
 > Bun-native backend framework — modules, plugins, guards, services, and a CLI. No magic, just code.
 
 OakBun is a structured backend framework built for [Bun](https://bun.sh). It gives you a clear, composable architecture: **modules** own routes, **plugins** extend the request context, **guards** gate access, **services** hold business logic, and the **ORM** speaks your schema directly. Everything is TypeScript-first with full type inference — no decorators, no reflection, no runtime surprises.
