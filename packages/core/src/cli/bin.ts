@@ -22,8 +22,15 @@ const BUILTIN: Record<string, BuiltinHandler> = {
   'shell':            tinker,
 }
 
-function parseArgs(argv: string[], options: { flag: string }[]): Record<string, string> {
+function parseArgs(argv: string[], options: { flag: string; default?: string }[]): Record<string, string> {
   const result: Record<string, string> = {}
+
+  // Seed defaults first — CLI flags override them below
+  for (const opt of options) {
+    const match = /^--(\w[\w-]*)/.exec(opt.flag)
+    if (match && opt.default !== undefined) result[match[1]] = opt.default
+  }
+
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
     for (const opt of options) {

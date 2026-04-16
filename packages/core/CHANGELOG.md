@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.3
+
+### Patch Changes
+
+- fix(cli): apply option default values to args when flag is omitted in defineCommand
+
 ## 0.5.2
 
 ### Patch Changes

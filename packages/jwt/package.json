@@ -43,7 +43,7 @@
     "jose": "^6.2.2"
   },
   "peerDependencies": {
-    "oakbun": ">=0.5.2"
+    "oakbun": ">=0.5.3"
   },
   "devDependencies": {
     "oakbun": "workspace:*"
