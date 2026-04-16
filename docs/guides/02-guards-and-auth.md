@@ -1,13 +1,26 @@
 ---
 title: "Guards & Auth"
 category: "guides"
-tags: ["guard", "auth", "authorization", "jwt", "permissions"]
-related: ["defineGuard", "JWT Plugin", "Error Handling"]
+tags: ["guard", "auth", "authorization", "jwt", "permissions", "plugin-guard"]
+related: ["defineGuard", "definePlugin", "JWT Plugin", "Error Handling"]
 ---
 
 # Guards & Auth
 
-Guards are synchronous or asynchronous functions that run before a route handler. They throw to block, return to allow.
+Guards run before a route handler. Return `null` (or throw nothing) to pass, return a `Response` (or throw an error) to block.
+
+## Guard Execution Order
+
+Guards run in a fixed hierarchy — outer tiers run first:
+
+```
+plugin guard(s)    ← .guard() on definePlugin
+  module guard(s)  ← .guard() on defineModule
+    route guard    ← guard: fn on individual route
+      handler
+```
+
+If any guard returns a `Response`, the chain stops immediately — lower tiers never run.
 
 ## Defining a Guard
 
@@ -28,9 +41,46 @@ export const requireAdmin = defineGuard('requireAdmin')
   })
 ```
 
+## Plugin-Level Guard
+
+Use `.guard()` on `definePlugin` to protect **all modules in the plugin** with a single guard. This is the outermost tier — it runs before module and route guards.
+
+```ts
+import { definePlugin, defineModule } from 'oakbun'
+
+function adminGuard(ctx: { req: Request }): Response | null {
+  const token = ctx.req.headers.get('x-admin-token')
+  if (token !== process.env.ADMIN_TOKEN) {
+    return Response.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  return null
+}
+
+export const adminPlugin = definePlugin<object>('admin')
+  .modules([
+    defineModule('/admin/users').get('/', ...).build(),
+    defineModule('/admin/posts').get('/', ...).build(),
+    defineModule('/admin/settings').get('/', ...).build(),
+  ])
+  .guard(adminGuard)   // one guard — all 3 modules protected
+  .extend(() => ({}))
+```
+
+Chain multiple guards or pass an array — all must pass (short-circuit on first block):
+
+```ts
+definePlugin<object>('secure')
+  .modules([...])
+  .guard(requireValidToken)
+  .guard(requireActiveAccount)
+  .extend(() => ({}))
+```
+
+Plugin guards are **isolated** — a guard on plugin A never runs for plugin B's routes or directly registered routes.
+
 ## Module-Level Guard
 
-Protects all routes in a module:
+Protects all routes within a module:
 
 ```ts
 defineModule('/posts')
@@ -43,17 +93,17 @@ defineModule('/posts')
 
 ## Per-Route Guard
 
-Overrides the module guard on specific routes:
+Applies only to a single route — overrides or supplements the module guard:
 
 ```ts
 defineModule('/posts')
   .guard(requireAuth)
   .get('/public', {
-    guard:   false,                             // public — no guard
+    guard:   false,            // public — skip the module guard
     handler: async (ctx) => ctx.json([]),
   })
   .delete('/:id', {
-    guard:   requireAdmin,                      // stricter guard for this route
+    guard:   requireAdmin,     // stricter guard on this route
     params:  z.object({ id: z.coerce.number() }),
     handler: async (ctx) => ctx.json(await ctx.posts.remove(ctx.params.id)),
   })
@@ -62,7 +112,7 @@ defineModule('/posts')
 
 ## Parameterized Guards
 
-Guards can be functions that return a `defineGuard` result:
+Guards can be factory functions:
 
 ```ts
 export const requireRole = (role: string) =>
@@ -75,20 +125,20 @@ export const requireRole = (role: string) =>
 // Usage
 defineModule('/admin')
   .guard(requireRole('admin'))
+  .get('/', ...)
+  .build()
 ```
 
 ## Plugin-Declared Permissions
 
-Plugins can declare named permissions:
+Plugins can declare named permissions checked via `AuthAdapter`:
 
 ```ts
 const billingPlugin = definePlugin<{ billing: BillingCtx }>('billing')
   .permission('billing:read')
-  .permission('billing:write')
+  .modules([billingModule])
   .extend(() => ({ billing: {} }))
 ```
-
-Check permissions in a guard using `AuthAdapter`:
 
 ```ts
 import type { AuthAdapter } from 'oakbun'
@@ -134,6 +184,7 @@ const apiModule = defineModule('/api')
 ## See Also
 
 - [defineGuard](../core/07-define-guard.md)
+- [definePlugin](../core/04-define-plugin.md)
 - [JWT Plugin](../plugins/02-jwt-plugin.md)
 - [Auth Adapter](../plugins/03-auth-adapter.md)
 - [Error Handling](./01-error-handling.md)

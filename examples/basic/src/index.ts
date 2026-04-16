@@ -61,6 +61,7 @@ import { commentsResource }   from './resources/comments.resource'
 import { timingMiddleware }   from './middleware/timing.middleware'
 import { corsMiddleware }     from './middleware/cors.middleware'
 import { statsPlugin }           from './plugins/stats.plugin'
+import { adminPlugin }           from './plugins/admin.plugin'
 import { cleanupCron }           from './crons/cleanup.cron'
 import { statsReportCron }       from './crons/stats-report.cron'
 import { NotificationService }   from './services/notification.service'
@@ -88,6 +89,7 @@ app
   .plugin(eventBusPlugin())
   .plugin(dbPlugin({ adapter: 'sqlite' }))
   .plugin(statsPlugin)
+  .plugin(adminPlugin)
 
   // Cron jobs — scheduled via Bun.cron (native, no external package)
   .cron(cleanupCron)

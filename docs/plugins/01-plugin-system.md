@@ -13,14 +13,15 @@ Plugins extend `ctx`, bundle modules, declare permissions, and participate in th
 
 ```ts
 interface Plugin<TCtx, TAdd extends Record<string, unknown>> {
-  name:        string
-  requires?:   string[]            // plugin names that must be registered first
-  modules?:    VelnModule[]        // bundled modules
-  permissions?: string[]           // declared permissions
-  nav?:        NavItem[]           // server-driven nav items
-  install?:    (hooks: HookExecutor) => void | Promise<void>
-  request:     (ctx: TCtx) => TAdd | Promise<TAdd>
-  teardown?:   () => void | Promise<void>
+  name:         string
+  requires?:    string[]            // plugin names that must be registered first
+  modules?:     VelnModule[]        // bundled modules
+  permissions?: string[]            // declared permissions
+  nav?:         NavItem[]           // server-driven nav items
+  guards?:      Guard<any>[]        // plugin-level guards (protect all bundled modules)
+  install?:     (hooks: HookExecutor) => void | Promise<void>
+  request:      (ctx: TCtx) => TAdd | Promise<TAdd>
+  teardown?:    () => void | Promise<void>
 }
 ```
 
@@ -33,7 +34,9 @@ Request arrives
     → ctx is extended with each plugin's TAdd
   → module-level onRequest hooks
   → module plugin.request() called
-  → route guard
+  → plugin guard(s)     ← .guard() on definePlugin
+  → module guard(s)     ← .guard() on defineModule
+  → route guard         ← guard: fn on individual route
   → onBeforeHandle hooks
   → route handler
   → onResponse hooks
@@ -84,6 +87,30 @@ const adminPlugin = definePlugin<{ admin: Admin }>('admin')
 ```
 
 When the plugin is registered, its modules are mounted automatically.
+
+## Plugin-Level Guards
+
+Use `.guard()` to protect all bundled modules with a single guard — the outermost tier in the guard hierarchy:
+
+```ts
+const adminPlugin = definePlugin<object>('admin')
+  .modules([
+    defineModule('/admin/users').get('/', ...).build(),
+    defineModule('/admin/posts').get('/', ...).build(),
+  ])
+  .guard((ctx) => {
+    const token = ctx.req.headers.get('x-admin-token')
+    if (token !== process.env.ADMIN_TOKEN) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    return null
+  })
+  .extend(() => ({}))
+```
+
+Guards are **isolated per plugin** — they never affect routes from other plugins or directly registered routes. Chain `.guard()` calls to require multiple conditions; guards short-circuit on the first block.
+
+See [Guards & Auth](../guides/02-guards-and-auth.md) for the full hierarchy and examples.
 
 ## NavItem
 
