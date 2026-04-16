@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.0.1
+
+### Patch Changes
+
+- fix(jwt): JwtBaseError, TokenExpiredError, InvalidTokenError now extend VelnError — app.onError catches JWT errors automatically and returns 401 instead of 500.
+- Updated dependencies
+  - oakbun@0.5.1
+
 ## 4.0.0
 
 ### Patch Changes

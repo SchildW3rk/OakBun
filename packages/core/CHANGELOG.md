@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1
+
+### Patch Changes
+
+- fix(migrations): dialect-aware DDL for migrations tracking table — SQLite uses AUTOINCREMENT, Postgres/MySQL uses GENERATED ALWAYS AS IDENTITY. Fixes oak migrate:run crash on Postgres.
+
 ## 0.5.0
 
 ### Minor Changes
