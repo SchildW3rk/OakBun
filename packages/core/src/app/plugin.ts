@@ -1,4 +1,4 @@
-import type { BaseCtx, Logger, BaseOptions } from './types'
+import type { BaseCtx, Logger, BaseOptions, Guard } from './types'
 import type { VelnAdapter } from '../adapter/types'
 import type { HookExecutor } from '../hooks/executor'
 import type { EventBus } from '../events/index'
@@ -63,6 +63,13 @@ export interface Plugin<TCtx, TAdd extends object> {
    * GET /nav returns these filtered by the plugin's permissions for the current user.
    */
   nav?: NavItem[]
+  /**
+   * Optional guards applied to all routes contributed via .modules().
+   * Run after global guards, before module-level guards.
+   * Return null to pass, return a Response to block.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  guards?: Guard<any>[]
   // install receives the app's HookExecutor so plugins can register hooks into it.
   // Most plugins ignore it — only dbPlugin uses it to wire itself into the app.
   install?: (hooks: HookExecutor) => Promise<void> | void
@@ -78,6 +85,8 @@ export class PluginBuilder<TAdd extends object> {
   private _modules:     VelnModule[] = []
   private _permissions: string[]     = []
   private _nav:         NavItem[]    = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _guards:      Guard<any>[] = []
 
   constructor(private readonly _name: string) {}
 
@@ -119,6 +128,13 @@ export class PluginBuilder<TAdd extends object> {
     return this
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  guard(guardOrGuards: Guard<any> | Guard<any>[]): this {
+    const list = Array.isArray(guardOrGuards) ? guardOrGuards : [guardOrGuards]
+    this._guards.push(...list)
+    return this
+  }
+
   nav(items: NavItem | NavItem[]): this {
     this._nav = Array.isArray(items) ? items : [items]
     return this
@@ -134,12 +150,14 @@ export class PluginBuilder<TAdd extends object> {
     const modules     = this._modules.length     > 0 ? this._modules     : undefined
     const permissions = this._permissions.length > 0 ? this._permissions : undefined
     const nav         = this._nav.length         > 0 ? this._nav         : undefined
+    const guards      = this._guards.length      > 0 ? this._guards      : undefined
     return {
       name,
       requires,
       modules,
       permissions,
       nav,
+      guards,
       install:  undefined,
       request:  async (ctx) => {
         logger.debug('request', { plugin: name })
@@ -161,12 +179,14 @@ export class PluginBuilder<TAdd extends object> {
     const modules     = this._modules.length     > 0 ? this._modules     : undefined
     const permissions = this._permissions.length > 0 ? this._permissions : undefined
     const nav         = this._nav.length         > 0 ? this._nav         : undefined
+    const guards      = this._guards.length      > 0 ? this._guards      : undefined
     return {
       name,
       requires,
       modules,
       permissions,
       nav,
+      guards,
       install:  def.install,
       request:  async (ctx) => {
         logger.debug('request', { plugin: name })

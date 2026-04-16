@@ -426,9 +426,10 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     if (p.modules) {
       for (const mod of p.modules) {
         this.register(mod)
-        // Tag every route that belongs to this plugin so _runRoute can look up
-        // its permissions without a separate Map.
-        if (p.permissions && p.permissions.length > 0) {
+        // Tag every route that belongs to this plugin so _runGuards and
+        // _runPermissionGate can look up plugin guards/permissions by name.
+        // Always tag — not just when permissions are set — so plugin guards work too.
+        if (p.permissions?.length || p.guards?.length) {
           for (const route of this.routes) {
             if (route._module === mod && route._pluginName === undefined) {
               route._pluginName = p.name
@@ -1075,8 +1076,8 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     }
   }
 
-  // ── Phase 3: Guards (global + module + route) ────────────────────────────────
-  // Runs all three guard tiers in order. Returns a Response if any guard blocks,
+  // ── Phase 3: Guards (global + plugin + module + route) ──────────────────────
+  // Runs all four guard tiers in order. Returns a Response if any guard blocks,
   // null if all pass.
   private async _runGuards(
     ctx: BaseCtx,
@@ -1094,6 +1095,25 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
       }
       if (guardResult !== null) {
         return this._runOnResponse(ctx, guardResult, mod)
+      }
+    }
+
+    // Plugin guards — only for routes contributed via plugin.modules()
+    if (matchedRoute._pluginName !== undefined) {
+      const routePlugin = this.plugins.find((p) => p.name === matchedRoute._pluginName)
+      if (routePlugin?.guards) {
+        for (const guard of routePlugin.guards) {
+          let guardResult: Response | null
+          try {
+            guardResult = await guard(ctx)
+          } catch (err) {
+            const errRes = await this._handleError(err, ctx, matchedRoute)
+            return this._runOnResponse(ctx, errRes, mod)
+          }
+          if (guardResult !== null) {
+            return this._runOnResponse(ctx, guardResult, mod)
+          }
+        }
       }
     }
 
