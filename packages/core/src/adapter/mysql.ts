@@ -55,6 +55,7 @@ export class MySQLAdapter implements VelnAdapter {
   async transaction<T>(fn: (tx: VelnAdapter) => Promise<T>): Promise<T> {
     return this.sql.begin(async (tx: any) => {
       const txAdapter: VelnAdapter = {
+        dialect:     'mysql',
         query:       (s, p = []) => tx.unsafe(s, p),
         execute:     async (s, p = []) => {
           const r = await tx.unsafe(s, p)

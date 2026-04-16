@@ -131,6 +131,7 @@ export class BoundVelnDB {
           if (log.logQueries) log.entries.push({ sql, params, durationMs, type: 'execute' })
           return result
         },
+        dialect:     adapter.dialect,
         transaction: (fn) => adapter.transaction(fn),
         close: () => adapter.close(),
         onQuery: adapter.onQuery,
