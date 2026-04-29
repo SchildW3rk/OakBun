@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 import { createSystemCtx } from '../../packages/core/src/app/system-ctx'
-import { VelnDB } from '../../packages/core/src/db/index'
+import { OakBunDB } from '../../packages/core/src/db/index'
 import { HookExecutor } from '../../packages/core/src/hooks/executor'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
@@ -76,7 +76,7 @@ describe('createSystemCtx — happy path', () => {
   test('db.withCtx(systemCtx) works — no error', () => {
     const adapter = new SQLiteAdapter()
     const hooks   = new HookExecutor()
-    const db      = new VelnDB(adapter, hooks)
+    const db      = new OakBunDB(adapter, hooks)
     const ctx     = createSystemCtx({ user: { id: 'system', role: 'admin' } })
     const bound   = db.withCtx(ctx)
     expect(bound).toBeDefined()
@@ -96,11 +96,11 @@ describe('createSystemCtx — happy path', () => {
       },
     })
 
-    const db    = new VelnDB(adapter, hooks)
+    const db    = new OakBunDB(adapter, hooks)
     const ctx   = createSystemCtx({ user: { id: 'system', role: 'admin' } })
     const bound = db.withCtx(ctx)
 
-    await bound.into(usersTable).insert({ name: 'System User', email: 'sys@veln.dev' })
+    await bound.into(usersTable).insert({ name: 'System User', email: 'sys@oakbun.dev' })
 
     expect(capturedUserId).toBe('system')
   })
@@ -123,11 +123,11 @@ describe('createSystemCtx — happy path', () => {
     const auditHandlers = buildAuditHooks(auditDecl, adapter)
     hooks.registerModuleHook(usersTable.name, auditHandlers)
 
-    const db    = new VelnDB(adapter, hooks)
+    const db    = new OakBunDB(adapter, hooks)
     const ctx   = createSystemCtx({ user: { id: 'system', role: 'admin' } })
     const bound = db.withCtx(ctx)
 
-    await bound.into(usersTable).insert({ name: 'System User', email: 'sys@veln.dev' })
+    await bound.into(usersTable).insert({ name: 'System User', email: 'sys@oakbun.dev' })
 
     const rows = await adapter.query<Record<string, unknown>>('SELECT * FROM "sc_audit"')
     expect(rows.length).toBe(1)
@@ -153,10 +153,10 @@ describe('createSystemCtx — unhappy path', () => {
     expect(ctx.db).toBeUndefined()
   })
 
-  test('withCtx() works with systemCtx — BoundVelnDB created successfully', () => {
+  test('withCtx() works with systemCtx — BoundOakBunDB created successfully', () => {
     const adapter = new SQLiteAdapter()
     const hooks   = new HookExecutor()
-    const db      = new VelnDB(adapter, hooks)
+    const db      = new OakBunDB(adapter, hooks)
     const ctx     = createSystemCtx()
     // No throw — withCtx accepts unknown, systemCtx satisfies it
     expect(() => db.withCtx(ctx)).not.toThrow()

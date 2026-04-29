@@ -4,7 +4,7 @@
  * Demonstrates:
  *   - defineCron() fluent API with @daily shortcut
  *   - .options({ runOnStart, log }) — fires immediately on server start, logs at info level
- *   - ctx.db builder API (SelectBuilder + BoundVelnDB)
+ *   - ctx.db builder API (SelectBuilder + BoundOakBunDB)
  *   - logger as 2nd handler argument
  */
 

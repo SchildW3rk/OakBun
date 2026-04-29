@@ -1,10 +1,10 @@
 import { describe, test, expect } from 'bun:test'
 import { defineConfig, defineCommand } from '../../packages/core/src/cli/config/types'
-import type { VelnConfig } from '../../packages/core/src/cli/config/types'
+import type { OakBunConfig } from '../../packages/core/src/cli/config/types'
 
 describe('defineConfig', () => {
   test('returns config as-is', () => {
-    const cfg: VelnConfig = { migrations: './db/migrations', schema: './src/schema' }
+    const cfg: OakBunConfig = { migrations: './db/migrations', schema: './src/schema' }
     expect(defineConfig(cfg)).toStrictEqual(cfg)
   })
 

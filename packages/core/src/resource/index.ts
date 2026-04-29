@@ -1,6 +1,6 @@
 import type { ZodTypeAny } from 'zod'
 import type { TableDef, SchemaMap, InferRow, InferInsert } from '../schema/table'
-import type { BoundVelnDB } from '../db/index'
+import type { BoundOakBunDB } from '../db/index'
 import type { BaseCtx, BaseOptions } from '../app/types'
 import type { Guard, ErrorHandler, OnRequestHook, OnBeforeHandleHook, OnResponseHook } from '../app/types'
 import type { Plugin } from '../app/plugin'
@@ -11,7 +11,7 @@ import type { EventHandlerDef } from '../events/handler'
 import { defineModel } from '../model/index'
 import { defineService } from '../service/index'
 import { ModuleBuilder, defineModule } from '../app/module'
-import type { VelnModule } from '../app/module'
+import type { OakBunModule } from '../app/module'
 import { tableToZodInsert, tableToZodRow } from './zod-table'
 import { NotFoundError } from './errors'
 
@@ -38,13 +38,13 @@ export interface DefaultModelMethods<TRow, TInsert> {
 // plus any new methods they want to add.
 // Each override replaces the default implementation entirely.
 export interface ModelOverrides<TRow, TInsert> {
-  index?:   (db: BoundVelnDB) => () => Promise<TRow[]>
-  show?:    (db: BoundVelnDB) => (id: number) => Promise<TRow>
-  store?:   (db: BoundVelnDB) => (data: TInsert) => Promise<TRow>
-  update?:  (db: BoundVelnDB) => (id: number, data: Partial<TInsert>) => Promise<TRow>
-  destroy?: (db: BoundVelnDB) => (id: number) => Promise<void>
+  index?:   (db: BoundOakBunDB) => () => Promise<TRow[]>
+  show?:    (db: BoundOakBunDB) => (id: number) => Promise<TRow>
+  store?:   (db: BoundOakBunDB) => (data: TInsert) => Promise<TRow>
+  update?:  (db: BoundOakBunDB) => (id: number, data: Partial<TInsert>) => Promise<TRow>
+  destroy?: (db: BoundOakBunDB) => (id: number) => Promise<void>
   // Extra methods — any signature
-  [key: string]: ((db: BoundVelnDB) => (...args: never[]) => unknown) | undefined
+  [key: string]: ((db: BoundOakBunDB) => (...args: never[]) => unknown) | undefined
 }
 
 // ServiceOverrides — user provides ({ model }, ...args) => result for each CRUD method.
@@ -277,7 +277,7 @@ function buildResourceModule<T, S extends SchemaMap>(
 export interface ResourceResult<T, S extends SchemaMap> {
   Model:   ReturnType<typeof buildResourceModel<T, S>>
   Service: ServiceDef<ResourceServiceKey<string>, DefaultModelMethods<InferRow<TableDef<T, S>>, InferInsert<TableDef<T, S>>>>
-  module:  VelnModule
+  module:  OakBunModule
 }
 
 // ── ResourceBuilder ───────────────────────────────────────────────────────────

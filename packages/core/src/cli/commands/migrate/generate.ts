@@ -1,8 +1,8 @@
-import type { VelnConfig } from '../../config/types'
+import type { OakBunConfig } from '../../config/types'
 import { discoverTables } from '../../discovery/tables'
 import { loadAdapter } from './adapter'
 
-export async function migrateGenerate(args: string[], config: VelnConfig): Promise<void> {
+export async function migrateGenerate(args: string[], config: OakBunConfig): Promise<void> {
   const { generateMigration } = await import('../../../db/migrations/index')
 
   const name   = args[0]
@@ -12,7 +12,7 @@ export async function migrateGenerate(args: string[], config: VelnConfig): Promi
     console.log('⬜ No tables found. Searched in:')
     console.log('   ./src/features, ./src/schema, ./src/tables, ./src')
     console.log('')
-    console.log('   Add a veln.config.ts to specify your schema path:')
+    console.log('   Add a oakbun.config.ts to specify your schema path:')
     console.log('   export default defineConfig({ schema: "./your/path" })')
     return
   }

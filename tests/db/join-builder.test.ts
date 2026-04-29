@@ -1,12 +1,12 @@
 import { describe, test, expect } from 'bun:test'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor } from '../../packages/core/src/hooks/executor'
-import { VelnDB } from '../../packages/core/src/db/index'
+import { OakBunDB } from '../../packages/core/src/db/index'
 import { JoinBuilder } from '../../packages/core/src/db/index'
 import { buildJoinSelect, validateAndQuoteOnClause } from '../../packages/core/src/db/sql'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import { column } from '../../packages/core/src/schema/column'
-import { VelnError } from '../../packages/core/src/errors/index'
+import { OakBunError } from '../../packages/core/src/errors/index'
 
 // ── Schema ───────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ const itemsTable = defineTable('items', {
 async function createSetup() {
   const adapter = new SQLiteAdapter()
   const exec    = new HookExecutor()
-  const db      = new VelnDB(adapter, exec)
+  const db      = new OakBunDB(adapter, exec)
   const bound   = db.withCtx({})
 
   await adapter.execute(toCreateTableSql(usersTable))
@@ -284,34 +284,34 @@ describe('validateAndQuoteOnClause — SQL injection prevention', () => {
 
   test('injection: semicolon → INVALID_JOIN_ON', () => {
     expect(() => validateAndQuoteOnClause('1=1; DROP TABLE users'))
-      .toThrow(VelnError)
+      .toThrow(OakBunError)
   })
 
   test('injection: -- comment → INVALID_JOIN_ON', () => {
     expect(() => validateAndQuoteOnClause('orders.id = users.id; --'))
-      .toThrow(VelnError)
+      .toThrow(OakBunError)
   })
 
   test('injection: OR clause → INVALID_JOIN_ON', () => {
     expect(() => validateAndQuoteOnClause('orders.id OR 1=1'))
-      .toThrow(VelnError)
+      .toThrow(OakBunError)
   })
 
   test('empty string → INVALID_JOIN_ON', () => {
-    expect(() => validateAndQuoteOnClause('')).toThrow(VelnError)
+    expect(() => validateAndQuoteOnClause('')).toThrow(OakBunError)
   })
 
   test('only one side → INVALID_JOIN_ON', () => {
-    expect(() => validateAndQuoteOnClause('orders.id')).toThrow(VelnError)
+    expect(() => validateAndQuoteOnClause('orders.id')).toThrow(OakBunError)
   })
 
   test('missing right side → INVALID_JOIN_ON', () => {
-    expect(() => validateAndQuoteOnClause('orders.id = ')).toThrow(VelnError)
+    expect(() => validateAndQuoteOnClause('orders.id = ')).toThrow(OakBunError)
   })
 
-  test('VelnError has code INVALID_JOIN_ON', () => {
-    let caught: VelnError | null = null
-    try { validateAndQuoteOnClause('bad input') } catch (e) { caught = e as VelnError }
+  test('OakBunError has code INVALID_JOIN_ON', () => {
+    let caught: OakBunError | null = null
+    try { validateAndQuoteOnClause('bad input') } catch (e) { caught = e as OakBunError }
     expect(caught?.code).toBe('INVALID_JOIN_ON')
   })
 })

@@ -171,7 +171,7 @@ export function rateLimitPlugin(options: RateLimitOptions): OnRequestHook {
   // bucket. This is almost certainly unintentional.
   if (!options.keyResolver && !trustProxy) {
     console.warn(
-      '[veln:rateLimit] Warning: no keyResolver or trustProxy provided. ' +
+      '[oakbun:rateLimit] Warning: no keyResolver or trustProxy provided. ' +
       "If your app runs behind a reverse proxy, the default key resolver may fall back to 'unknown', " +
       'causing all clients to share a single rate-limit bucket. ' +
       'Set trustProxy: true (if behind a trusted proxy) or provide a custom keyResolver.',
@@ -205,7 +205,7 @@ export function rateLimitPlugin(options: RateLimitOptions): OnRequestHook {
       if (!_missingHeaderWarned) {
         _missingHeaderWarned = true
         console.warn(
-          '[veln:rateLimit] trustProxy is enabled but no X-Forwarded-For header found. ' +
+          '[oakbun:rateLimit] trustProxy is enabled but no X-Forwarded-For header found. ' +
           'All requests may be bucketed under the same IP. ' +
           'Ensure your reverse proxy sets X-Forwarded-For correctly.',
         )

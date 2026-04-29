@@ -9,7 +9,7 @@ import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/ta
 import { column } from '../../packages/core/src/schema/column'
 import { defineService } from '../../packages/core/src/service/index'
 import { defineModel } from '../../packages/core/src/model/index'
-import { BoundVelnDB } from '../../packages/core/src/db/index'
+import { BoundOakBunDB } from '../../packages/core/src/db/index'
 
 // ── Test table + service ───────────────────────────────────────────────────────
 
@@ -160,7 +160,7 @@ describe('CronBuilder.use() — immutable', () => {
 // ── 3. Handler receives db ────────────────────────────────────────────────────
 
 describe('Handler receives db', () => {
-  test('handler ctx.db is a BoundVelnDB', async () => {
+  test('handler ctx.db is a BoundOakBunDB', async () => {
     const adapter = new SQLiteAdapter()
     await adapter.execute(toCreateTableSql(jobsTable))
 
@@ -172,14 +172,14 @@ describe('Handler receives db', () => {
     const app = createApp().plugin(dbPlugin(adapter)).cron(def)
 
     const sysCtx = await import('../../packages/core/src/app/system-ctx').then((m) => m.createSystemCtx())
-    const { VelnDB } = await import('../../packages/core/src/db/index')
-    const velnDb = new VelnDB(adapter, app.hooks)
-    const boundDb = velnDb.withCtx(sysCtx)
+    const { OakBunDB } = await import('../../packages/core/src/db/index')
+    const oakBunDb = new OakBunDB(adapter, app.hooks)
+    const boundDb = oakBunDb.withCtx(sysCtx)
 
     const cronCtx: CronCtx = { db: boundDb }
     await def._handler!(cronCtx)
 
-    expect(receivedDb).toBeInstanceOf(BoundVelnDB)
+    expect(receivedDb).toBeInstanceOf(BoundOakBunDB)
   })
 
   test('handler can perform DB operations', async () => {
@@ -194,11 +194,11 @@ describe('Handler receives db', () => {
       created.push(...all.map((j: { name: string }) => j.name))
     })
 
-    const { VelnDB } = await import('../../packages/core/src/db/index')
+    const { OakBunDB } = await import('../../packages/core/src/db/index')
     const { createSystemCtx } = await import('../../packages/core/src/app/system-ctx')
-    const velnDb = new VelnDB(adapter, (createApp().plugin(dbPlugin(adapter))).hooks)
+    const oakBunDb = new OakBunDB(adapter, (createApp().plugin(dbPlugin(adapter))).hooks)
     const sysCtx = createSystemCtx()
-    const boundDb = velnDb.withCtx(sysCtx)
+    const boundDb = oakBunDb.withCtx(sysCtx)
 
     await def._handler!({ db: boundDb })
     expect(created).toContain('cron-created')
@@ -222,13 +222,13 @@ describe('Handler receives services via .use()', () => {
         svcAvailable = typeof ctx.jobService.listJobs === 'function'
       })
 
-    const { VelnDB } = await import('../../packages/core/src/db/index')
+    const { OakBunDB } = await import('../../packages/core/src/db/index')
     const { createSystemCtx } = await import('../../packages/core/src/app/system-ctx')
     const { instantiateServices } = await import('../../packages/core/src/service/index')
     const appHooks = createApp().plugin(dbPlugin(adapter)).hooks
-    const velnDb = new VelnDB(adapter, appHooks)
+    const oakBunDb = new OakBunDB(adapter, appHooks)
     const sysCtx = createSystemCtx()
-    const boundDb = velnDb.withCtx(sysCtx)
+    const boundDb = oakBunDb.withCtx(sysCtx)
     const services = instantiateServices(def._services, boundDb)
 
     await def._handler!({ db: boundDb, ...services })
@@ -253,13 +253,13 @@ describe('Handler receives services via .use()', () => {
         bothAvailable  = hasJob && hasExtra
       })
 
-    const { VelnDB } = await import('../../packages/core/src/db/index')
+    const { OakBunDB } = await import('../../packages/core/src/db/index')
     const { createSystemCtx } = await import('../../packages/core/src/app/system-ctx')
     const { instantiateServices } = await import('../../packages/core/src/service/index')
     const appHooks = createApp().plugin(dbPlugin(adapter)).hooks
-    const velnDb = new VelnDB(adapter, appHooks)
+    const oakBunDb = new OakBunDB(adapter, appHooks)
     const sysCtx = createSystemCtx()
-    const boundDb = velnDb.withCtx(sysCtx)
+    const boundDb = oakBunDb.withCtx(sysCtx)
     const services = instantiateServices(def._services, boundDb)
 
     await def._handler!({ db: boundDb, ...services })
@@ -481,12 +481,12 @@ describe('defineCron — .options({ log })', () => {
 
     // Invoke handler directly
     const { SQLiteAdapter } = require('../../packages/core/src/adapter/sqlite')
-    const { VelnDB } = require('../../packages/core/src/db/index')
+    const { OakBunDB } = require('../../packages/core/src/db/index')
     const { createSystemCtx } = require('../../packages/core/src/app/system-ctx')
     const adapter = new SQLiteAdapter()
     const { HookExecutor } = require('../../packages/core/src/hooks/executor')
-    const velnDb = new VelnDB(adapter, new HookExecutor())
-    const boundDb = velnDb.withCtx(createSystemCtx())
+    const oakBunDb = new OakBunDB(adapter, new HookExecutor())
+    const boundDb = oakBunDb.withCtx(createSystemCtx())
 
     void def._handler!({ db: boundDb }, def._logger)
     spy.mockRestore()

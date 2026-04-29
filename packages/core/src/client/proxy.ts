@@ -1,6 +1,6 @@
 import type { RouteMap, RouteEntry } from '../app/types'
 import type { ZodTypeAny } from 'zod'
-import { VelnClientError } from './error'
+import { OakBunClientError } from './error'
 
 // ── Type utilities ─────────────────────────────────────────────────────────────
 
@@ -11,7 +11,7 @@ type RouteResponseType<TEntry extends RouteEntry> =
 // ClientResult — discriminated union so callers must check ok before accessing data
 export type ClientResult<T> =
   | { ok: true;  data: T;   status: number }
-  | { ok: false; error: VelnClientError; status: number; code: string; message: string }
+  | { ok: false; error: OakBunClientError; status: number; code: string; message: string }
 
 // ── Path → client key conversion ──────────────────────────────────────────────
 
@@ -294,7 +294,7 @@ async function executeProxyRequest(
     res = await fetchFn(new Request(url, { method: descriptor.method, headers, body: bodyStr }))
   } catch (networkErr) {
     const msg = networkErr instanceof Error ? networkErr.message : 'Network error'
-    const err = new VelnClientError(0, 'NETWORK_ERROR', msg)
+    const err = new OakBunClientError(0, 'NETWORK_ERROR', msg)
     if (throwOnError) throw err
     return { ok: false, error: err, status: 0, code: 'NETWORK_ERROR', message: msg }
   }
@@ -309,7 +309,7 @@ async function executeProxyRequest(
       else if (body.error) message = body.error
     } catch { /* ignore parse error */ }
 
-    const err = new VelnClientError(res.status, code, message)
+    const err = new OakBunClientError(res.status, code, message)
     if (throwOnError) throw err
     return { ok: false, error: err, status: res.status, code, message }
   }

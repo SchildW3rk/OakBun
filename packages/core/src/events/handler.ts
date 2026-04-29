@@ -1,4 +1,4 @@
-import type { VelnEvents } from './index'
+import type { OakBunEvents } from './index'
 import type { Logger, BaseOptions } from '../app/types'
 import type { ServiceDef } from '../service/index'
 import { createMinimalLogger } from '../app/logger'
@@ -125,9 +125,9 @@ export function defineEventHandler<TTable extends TableLike>(
   table: TTable,
 ): EventHandlerBuilder<TTable>
 
-// Overload 3 — free (plain string keys, VelnEvents) → EventHandlerDef
+// Overload 3 — free (plain string keys, OakBunEvents) → EventHandlerDef
 export function defineEventHandler(
-  handlers: Partial<{ [K in keyof VelnEvents]: (payload: VelnEvents[K]) => void | Promise<void> }>,
+  handlers: Partial<{ [K in keyof OakBunEvents]: (payload: OakBunEvents[K]) => void | Promise<void> }>,
 ): EventHandlerDef
 
 export function defineEventHandler<TTable extends TableLike>(

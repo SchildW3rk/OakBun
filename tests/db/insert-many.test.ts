@@ -1,11 +1,11 @@
 import { describe, test, expect, beforeEach, mock } from 'bun:test'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor } from '../../packages/core/src/hooks/executor'
-import { VelnDB, BoundVelnDB, InsertBuilder } from '../../packages/core/src/db/index'
+import { OakBunDB, BoundOakBunDB, InsertBuilder } from '../../packages/core/src/db/index'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import type { InferRow, InferInsert } from '../../packages/core/src/schema/table'
 import { column } from '../../packages/core/src/schema/column'
-import type { VelnAdapter } from '../../packages/core/src/adapter/types'
+import type { OakBunAdapter } from '../../packages/core/src/adapter/types'
 
 // ── Test schema ────────────────────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ type NewUser = InferInsert<typeof usersTable>
 function createSetup() {
   const adapter = new SQLiteAdapter()
   const exec    = new HookExecutor()
-  const db      = new VelnDB(adapter, exec)
+  const db      = new OakBunDB(adapter, exec)
   const ctx     = {}
   const bound   = db.withCtx(ctx)
   return { adapter, exec, db, ctx, bound }
@@ -69,8 +69,8 @@ describe('insertMany — happy path', () => {
     await adapter.execute(toCreateTableSql(usersTable))
 
     let queryCallCount = 0
-    const wrappedAdapter: VelnAdapter = {
-      query: async <T>(sql: string, params?: Parameters<VelnAdapter['query']>[1]): Promise<T[]> => {
+    const wrappedAdapter: OakBunAdapter = {
+      query: async <T>(sql: string, params?: Parameters<OakBunAdapter['query']>[1]): Promise<T[]> => {
         queryCallCount++
         return adapter.query<T>(sql, params)
       },
@@ -80,7 +80,7 @@ describe('insertMany — happy path', () => {
     }
 
     const exec  = new HookExecutor()
-    const bound = new BoundVelnDB(wrappedAdapter, exec, {})
+    const bound = new BoundOakBunDB(wrappedAdapter, exec, {})
 
     await bound.into(usersTable).insertMany([
       { name: 'Alice', email: 'a@example.com' },
@@ -97,8 +97,8 @@ describe('insertMany — happy path', () => {
     await adapter.execute(toCreateTableSql(usersTable))
 
     const capturedSql: string[] = []
-    const wrappedAdapter: VelnAdapter = {
-      query: async <T>(sql: string, params?: Parameters<VelnAdapter['query']>[1]): Promise<T[]> => {
+    const wrappedAdapter: OakBunAdapter = {
+      query: async <T>(sql: string, params?: Parameters<OakBunAdapter['query']>[1]): Promise<T[]> => {
         capturedSql.push(sql)
         return adapter.query<T>(sql, params)
       },
@@ -108,7 +108,7 @@ describe('insertMany — happy path', () => {
     }
 
     const exec  = new HookExecutor()
-    const bound = new BoundVelnDB(wrappedAdapter, exec, {})
+    const bound = new BoundOakBunDB(wrappedAdapter, exec, {})
 
     await bound.into(usersTable).insertMany([
       { name: 'Alice', email: 'a@example.com' },
@@ -226,8 +226,8 @@ describe('insertMany — unhappy path', () => {
     await adapter.execute(toCreateTableSql(usersTable))
 
     let queryCalled = false
-    const wrappedAdapter: VelnAdapter = {
-      query: async <T>(sql: string, params?: Parameters<VelnAdapter['query']>[1]): Promise<T[]> => {
+    const wrappedAdapter: OakBunAdapter = {
+      query: async <T>(sql: string, params?: Parameters<OakBunAdapter['query']>[1]): Promise<T[]> => {
         queryCalled = true
         return adapter.query<T>(sql, params)
       },
@@ -237,8 +237,8 @@ describe('insertMany — unhappy path', () => {
     }
 
     const exec    = new HookExecutor()
-    // Pass dialect='mysql' to BoundVelnDB
-    const bound   = new BoundVelnDB(wrappedAdapter, exec, {}, undefined, undefined, 'mysql')
+    // Pass dialect='mysql' to BoundOakBunDB
+    const bound   = new BoundOakBunDB(wrappedAdapter, exec, {}, undefined, undefined, 'mysql')
 
     await expect(
       bound.into(usersTable).insertMany([{ name: 'Alice', email: 'a@example.com' }]),
@@ -255,14 +255,14 @@ describe('insertMany — unhappy path', () => {
       afterInsert: () => { afterInsertCalled = true },
     })
 
-    const failingAdapter: VelnAdapter = {
+    const failingAdapter: OakBunAdapter = {
       query: async () => { throw new Error('DB connection lost') },
       execute:     async () => ({ rowsAffected: 0 }),
       transaction: async (fn) => fn(failingAdapter),
       close:       async () => {},
     }
 
-    const bound = new BoundVelnDB(failingAdapter, exec, {})
+    const bound = new BoundOakBunDB(failingAdapter, exec, {})
 
     await expect(
       bound.into(usersTable).insertMany([{ name: 'Alice', email: 'a@example.com' }]),
@@ -287,8 +287,8 @@ describe('insertMany — unhappy path', () => {
     const adapter = new SQLiteAdapter()
     await adapter.execute(toCreateTableSql(usersTable))
 
-    const wrappedAdapter: VelnAdapter = {
-      query: async <T>(sql: string, params?: Parameters<VelnAdapter['query']>[1]): Promise<T[]> => {
+    const wrappedAdapter: OakBunAdapter = {
+      query: async <T>(sql: string, params?: Parameters<OakBunAdapter['query']>[1]): Promise<T[]> => {
         queryCalled = true
         return adapter.query<T>(sql, params)
       },
@@ -297,7 +297,7 @@ describe('insertMany — unhappy path', () => {
       close:       ()           => adapter.close(),
     }
 
-    const bound = new BoundVelnDB(wrappedAdapter, exec, {})
+    const bound = new BoundOakBunDB(wrappedAdapter, exec, {})
 
     await expect(
       bound.into(usersTable).insertMany([

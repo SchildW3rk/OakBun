@@ -187,7 +187,7 @@ describe('Backward compatibility — existing array form unchanged', () => {
     expect((await res.json() as { legacy: boolean }).legacy).toBe(true)
   })
 
-  test('plugin.modules is always a plain VelnModule[] (array or factory both produce array)', () => {
+  test('plugin.modules is always a plain OakBunModule[] (array or factory both produce array)', () => {
     const mod = defineModule('/arr').get('/', (ctx) => ctx.json({})).build()
 
     const arrayPlugin = definePlugin<object>('arr').modules([mod]).extend(() => ({}))

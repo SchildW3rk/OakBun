@@ -1,5 +1,5 @@
-// ── @veln/jwt ─────────────────────────────────────────────────────────────────
-// JWT plugin and utilities for the Veln framework.
+// ── @oakbun/jwt ─────────────────────────────────────────────────────────────────
+// JWT plugin and utilities for the OakBun framework.
 // Uses jose as the underlying JWT engine.
 
 export { jwtPlugin }                                        from './plugin'

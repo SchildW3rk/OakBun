@@ -1,5 +1,5 @@
 // ── @oakbun/ws ────────────────────────────────────────────────────────────────
-// WebSocket support for the Veln framework.
+// WebSocket support for the OakBun framework.
 //
 // Usage:
 //   import { createWsAdapter } from '@oakbun/ws'
@@ -16,6 +16,6 @@
 // Side-effect: patches ModuleBuilder.prototype.ws()
 import './module-augment'
 
-export { createWsAdapter, VelnWsAdapterImpl } from './adapter'
+export { createWsAdapter, OakBunWsAdapterImpl } from './adapter'
 export type { WsRateLimitConfig } from './adapter'
 export type { WsCtx, WsCtxData, WsHandlers, WsRoute, WsRouteHandler, WsRouteHandlerWithSchema } from './types'

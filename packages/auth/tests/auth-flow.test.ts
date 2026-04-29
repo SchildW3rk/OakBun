@@ -3,7 +3,7 @@ import { SQLiteAdapter } from '../../../packages/core/src/adapter/sqlite'
 import { createApp } from '../../../packages/core/src/app/index'
 import { createOnRequest } from '../../../packages/core/src/app/types'
 import { createAuthTables } from '../src/migrate.js'
-import { createVelnDbAdapter } from '../src/adapter.js'
+import { createOakBunDbAdapter } from '../src/adapter.js'
 import { betterAuth } from 'better-auth'
 
 const TEST_EMAIL = 'e2e@test.com'
@@ -20,7 +20,7 @@ async function setup() {
     secret: TEST_SECRET,
     baseURL: BASE_URL,
     trustedOrigins: [BASE_URL],
-    database: createVelnDbAdapter(adapter),
+    database: createOakBunDbAdapter(adapter),
     emailAndPassword: { enabled: true },
     logger: { disabled: true },
   })

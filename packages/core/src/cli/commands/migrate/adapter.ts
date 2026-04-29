@@ -1,18 +1,18 @@
 import { resolve } from 'node:path'
-import type { VelnAdapter } from '../../../adapter/types'
-import type { VelnConfig } from '../../config/types'
+import type { OakBunAdapter } from '../../../adapter/types'
+import type { OakBunConfig } from '../../config/types'
 
 /**
  * Loads the adapter for CLI commands.
  * Resolves all paths relative to process.cwd() — the directory where the
- * user invokes `bunx veln`, not the location of this CLI source file.
+ * user invokes `bunx oakbun`, not the location of this CLI source file.
  *
  * Resolution order:
  *   1. src/db.ts (or src/db/index.ts, src/database.ts) — exports `adapter`
  *   2. *.sqlite file in project root — opened directly
  *   3. In-memory SQLite fallback
  */
-export async function loadAdapter(config: VelnConfig = {}): Promise<VelnAdapter> {
+export async function loadAdapter(config: OakBunConfig = {}): Promise<OakBunAdapter> {
   const cwd = process.cwd()
 
   // 1. Use adapter from config if provided
@@ -29,7 +29,7 @@ export async function loadAdapter(config: VelnConfig = {}): Promise<VelnAdapter>
     const abs = resolve(cwd, rel)
     if (await Bun.file(abs).exists()) {
       try {
-        const mod = await import(abs) as { adapter?: VelnAdapter }
+        const mod = await import(abs) as { adapter?: OakBunAdapter }
         if (
           mod.adapter &&
           typeof mod.adapter.query   === 'function' &&

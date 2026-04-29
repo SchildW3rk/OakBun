@@ -1,6 +1,6 @@
 import { readdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { VelnAdapter } from '../../adapter/types'
+import type { OakBunAdapter } from '../../adapter/types'
 import type { TableDef } from '../../schema/table'
 import type { SchemaMap } from '../../schema/table'
 import type { SchemaDiff, ColumnDef } from './types'
@@ -10,7 +10,7 @@ import { compareSchemas } from './diff'
 export interface GenerateOptions {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tables:        TableDef<any, SchemaMap>[]
-  adapter:       VelnAdapter
+  adapter:       OakBunAdapter
   migrationsDir: string
   name?:         string
   /**

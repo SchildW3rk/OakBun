@@ -902,7 +902,7 @@ async function typeCheck() {
   if (user.ok) {
     const _email: string = user.data.email
   }
-  const newUser = await client.apiUsers.store({ name: 'Alice', email: 'alice@veln.dev' })
+  const newUser = await client.apiUsers.store({ name: 'Alice', email: 'alice@oakbun.dev' })
   if (newUser.ok) {
     const _id: number = newUser.data.id        // no cast ✅
   }

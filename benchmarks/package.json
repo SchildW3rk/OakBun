@@ -1,0 +1,17 @@
+{
+  "name": "oakbun-benchmarks",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench": "bash run-benchmarks.sh",
+    "start:oakbun": "bun oakbun-server.ts",
+    "start:hono": "bun hono-server.ts"
+  },
+  "dependencies": {
+    "oakbun": "workspace:*",
+    "hono": "^4.6.14"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}

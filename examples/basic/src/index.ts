@@ -1,5 +1,5 @@
 /**
- * Veln Example Server
+ * OakBun Example Server
  *
  * Start:  bun run dev     (hot reload)
  *         bun run start   (production)
@@ -36,7 +36,7 @@
  *   cleanup.old-drafts   — 03:00 UTC daily  (+ runOnStart)
  *   stats.report         — every minute
  *
- * JWT_SECRET env var (default: "veln-example-secret")
+ * JWT_SECRET env var (default: "oakbun-example-secret")
  */
 
 import {
@@ -67,7 +67,7 @@ import { statsReportCron }       from './crons/stats-report.cron'
 import { NotificationService }   from './services/notification.service'
 
 const PORT   = Number(process.env.PORT ?? 4560)
-const SECRET = process.env.JWT_SECRET ?? 'veln-example-development-secret-change-in-production'
+const SECRET = process.env.JWT_SECRET ?? 'oakbun-example-development-secret-change-in-production'
 
 // ── App ───────────────────────────────────────────────────────────────────────
 
@@ -184,7 +184,7 @@ app.events(
 
 app.register(scalarPlugin(app, {
   path:    '/docs',
-  title:   'Veln Example API',
+  title:   'OakBun Example API',
   version: '1.0.0',
   cache:   true,
 }))
@@ -193,7 +193,7 @@ app.register(scalarPlugin(app, {
 
 app.listen(PORT, (port) => {
   console.log(printRouteTree(app.getRoutes(), {
-    title:   'Veln Example',
+    title:   'OakBun Example',
     version: 'v1.0.0',
     port,
   }))

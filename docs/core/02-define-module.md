@@ -116,7 +116,7 @@ All HTTP method builders accept two overload forms:
 | `.meta(opts)` | `this` | OpenAPI tag and description |
 | `.visibility(v)` | `this` | `'public'` \| `'private'` \| `'internal'` |
 | `.options(opts)` | `this` | Log options (`level`, `mask`) |
-| `.build()` | `VelnModule` | Seal and return the module |
+| `.build()` | `OakBunModule` | Seal and return the module |
 
 ## Route Parameters
 

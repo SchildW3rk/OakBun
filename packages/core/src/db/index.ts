@@ -1,4 +1,4 @@
-import type { VelnAdapter, BindingValue, QueryLogEntry } from '../adapter/types'
+import type { OakBunAdapter, BindingValue, QueryLogEntry } from '../adapter/types'
 import type { SchemaMap, TableDef, InferInsert, InferUpdate, RelationMeta, RelationsMap, WithRelations } from '../schema/table'
 import type { HookExecutor } from '../hooks/executor'
 import { RequestEventQueue } from '../events/index'
@@ -75,29 +75,29 @@ export interface EventBus {
   flush(events: PendingEvent[], ctx: unknown): Promise<void>
 }
 
-// ── VelnDB ─────────────────────────────────────────────────────────────────
+// ── OakBunDB ─────────────────────────────────────────────────────────────────
 
-export class VelnDB {
+export class OakBunDB {
   constructor(
-    private readonly adapter: VelnAdapter,
+    private readonly adapter: OakBunAdapter,
     private readonly hooks: HookExecutor,
   ) {}
 
-  /** Return a new BoundVelnDB scoped to the given context. Never mutates this. */
-  withCtx(ctx: unknown, queue?: RequestEventQueue, queryLog?: QueryLog): BoundVelnDB {
-    return new BoundVelnDB(this.adapter, this.hooks, ctx, queue, queryLog)
+  /** Return a new BoundOakBunDB scoped to the given context. Never mutates this. */
+  withCtx(ctx: unknown, queue?: RequestEventQueue, queryLog?: QueryLog): BoundOakBunDB {
+    return new BoundOakBunDB(this.adapter, this.hooks, ctx, queue, queryLog)
   }
 }
 
-// ── BoundVelnDB ────────────────────────────────────────────────────────────
+// ── BoundOakBunDB ────────────────────────────────────────────────────────────
 
-export class BoundVelnDB {
+export class BoundOakBunDB {
   /** Per-request query counter — incremented for every query() and execute() call on this instance. */
   _queryCount = 0
-  private readonly adapter: VelnAdapter
+  private readonly adapter: OakBunAdapter
 
   constructor(
-    adapter: VelnAdapter,
+    adapter: OakBunAdapter,
     private readonly hooks: HookExecutor,
     private readonly ctx: unknown,
     // queue is undefined when used outside HTTP context (CLI, tests, background jobs)
@@ -387,7 +387,7 @@ export class BoundVelnDB {
     return result
   }
 
-  async transaction<T>(fn: (db: BoundVelnDB) => Promise<T>): Promise<TransactionResult<T>> {
+  async transaction<T>(fn: (db: BoundOakBunDB) => Promise<T>): Promise<TransactionResult<T>> {
     // TX path: events collected inside the TX go into a dedicated txQueue.
     // If the TX commits successfully, txQueue.drain() returns the buffered events.
     // These are handed back via TransactionResult.events so the caller can flush
@@ -397,7 +397,7 @@ export class BoundVelnDB {
     const txQueue = new RequestEventQueue()
 
     const result = await this.adapter.transaction(async (txAdapter) => {
-      const txBound = new BoundVelnDB(txAdapter, this.hooks, this.ctx, txQueue)
+      const txBound = new BoundOakBunDB(txAdapter, this.hooks, this.ctx, txQueue)
       return fn(txBound)
     })
     // TX committed — drain buffered events into TransactionResult
@@ -457,7 +457,7 @@ function mergeWhereAnd<T>(
 
 export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsMap = RelationsMap> {
   constructor(
-    private readonly adapter: VelnAdapter,
+    private readonly adapter: OakBunAdapter,
     private readonly hooks: HookExecutor,
     private readonly ctx: unknown,
     private readonly queue: RequestEventQueue | undefined,
@@ -653,7 +653,7 @@ export class SelectBuilder<T, S extends SchemaMap, TRelations extends RelationsM
    * Used internally by ColumnRestrictedBuilder.subquery().
    */
   /** Internal accessor for ColumnRestrictedBuilder / UnionBuilder — returns the adapter. */
-  _getAdapter(): VelnAdapter { return this.adapter }
+  _getAdapter(): OakBunAdapter { return this.adapter }
   /** Internal accessor for ColumnRestrictedBuilder / UnionBuilder — returns the SQL dialect. */
   _getDialect(): SqlDialect { return this._dialect }
 
@@ -1301,7 +1301,7 @@ export class SoftDeleteBuilder<T, S extends SchemaMap> {
   private _conditions: WhereInput<T> = {} as WhereInput<T>
 
   constructor(
-    private readonly adapter:   VelnAdapter,
+    private readonly adapter:   OakBunAdapter,
     private readonly table:     TableDef<T, S>,
     private readonly _value:    Date | null,
     private readonly _dialect:  SqlDialect = 'sqlite',
@@ -1352,7 +1352,7 @@ export class UnionBuilder<T> {
   constructor(
     private readonly _parts:   Array<{ sql: string; params: BindingValue[] }>,
     private readonly _kind:    'UNION' | 'UNION ALL',
-    private readonly _adapter: VelnAdapter,
+    private readonly _adapter: OakBunAdapter,
     private readonly _dialect: SqlDialect,
   ) {}
 
@@ -1423,7 +1423,7 @@ export class UnionBuilder<T> {
 
 export class InsertBuilder<T, S extends SchemaMap> {
   constructor(
-    private readonly adapter: VelnAdapter,
+    private readonly adapter: OakBunAdapter,
     private readonly hooks: HookExecutor,
     private readonly ctx: unknown,
     private readonly queue: RequestEventQueue | undefined,
@@ -1554,7 +1554,7 @@ export class InsertBuilder<T, S extends SchemaMap> {
 
 export class JoinBuilder {
   constructor(
-    private readonly adapter: VelnAdapter,
+    private readonly adapter: OakBunAdapter,
     private readonly tableName: string,
     private readonly _columns: string[],
     private readonly _joins: JoinClause[],

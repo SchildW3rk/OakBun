@@ -1,6 +1,6 @@
 export { betterAuthPlugin, createAuthRequestHook } from './plugin.js'
 export { betterAuthAdapter } from './auth-adapter.js'
-export { createVelnDbAdapter } from './adapter.js'
+export { createOakBunDbAdapter } from './adapter.js'
 export { createAuthTables } from './migrate.js'
 export { convertWhere } from './where.js'
 export type { BetterAuthPluginOptions, AuthCtxAdd, BetterAuthInstance, BetterAuthUser, BetterAuthSession } from './plugin.js'

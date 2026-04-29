@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'bun:test'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor } from '../../packages/core/src/hooks/executor'
-import { VelnDB } from '../../packages/core/src/db/index'
+import { OakBunDB } from '../../packages/core/src/db/index'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import type { InferRow } from '../../packages/core/src/schema/table'
 import { column } from '../../packages/core/src/schema/column'
-import type { VelnAdapter, BindingValue, ExecuteResult } from '../../packages/core/src/adapter/types'
+import type { OakBunAdapter, BindingValue, ExecuteResult } from '../../packages/core/src/adapter/types'
 
 const itemsTable = defineTable('items', {
   id:    column.integer().primaryKey(),
@@ -17,7 +17,7 @@ type Item = InferRow<typeof itemsTable.schema>
 
 // ── Mock adapter that counts calls ────────────────────────────────────────────
 
-class CountingAdapter implements VelnAdapter {
+class CountingAdapter implements OakBunAdapter {
   private readonly inner: SQLiteAdapter
   public queryCalls   = 0
   public executeCalls = 0
@@ -36,7 +36,7 @@ class CountingAdapter implements VelnAdapter {
     return this.inner.execute(sql, params)
   }
 
-  async transaction<T>(fn: (adapter: VelnAdapter) => Promise<T>): Promise<T> {
+  async transaction<T>(fn: (adapter: OakBunAdapter) => Promise<T>): Promise<T> {
     return this.inner.transaction((txAdapter) => fn(new CountingAdapter(txAdapter as SQLiteAdapter)))
   }
 }
@@ -46,7 +46,7 @@ describe('update() — no N+1 query', () => {
     const sqlite  = new SQLiteAdapter()
     const counter = new CountingAdapter(sqlite)
     const exec    = new HookExecutor()
-    const db      = new VelnDB(counter, exec)
+    const db      = new OakBunDB(counter, exec)
     const bound   = db.withCtx({})
 
     await sqlite.execute(toCreateTableSql(itemsTable))
@@ -70,7 +70,7 @@ describe('update() — no N+1 query', () => {
   test('update() returns correct merged row — existing fields preserved', async () => {
     const sqlite  = new SQLiteAdapter()
     const exec    = new HookExecutor()
-    const db      = new VelnDB(sqlite, exec)
+    const db      = new OakBunDB(sqlite, exec)
     const bound   = db.withCtx({})
 
     await sqlite.execute(toCreateTableSql(itemsTable))
@@ -86,7 +86,7 @@ describe('update() — no N+1 query', () => {
   test('update() with no matching row → throws Record not found', async () => {
     const sqlite = new SQLiteAdapter()
     const exec   = new HookExecutor()
-    const db     = new VelnDB(sqlite, exec)
+    const db     = new OakBunDB(sqlite, exec)
     const bound  = db.withCtx({})
 
     await sqlite.execute(toCreateTableSql(itemsTable))
@@ -103,7 +103,7 @@ describe('update() — no N+1 query', () => {
       beforeUpdate: (_ctx, _current, patch) => ({ ...patch, name: patch.name?.toUpperCase() }),
     })
 
-    const db    = new VelnDB(sqlite, exec)
+    const db    = new OakBunDB(sqlite, exec)
     const bound = db.withCtx({})
 
     await sqlite.execute(toCreateTableSql(itemsTable))

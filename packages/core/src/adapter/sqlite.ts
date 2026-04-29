@@ -1,5 +1,5 @@
 import { Database } from 'bun:sqlite'
-import type { VelnAdapter, BindingValue, ExecuteResult, QueryLogEntry } from './types'
+import type { OakBunAdapter, BindingValue, ExecuteResult, QueryLogEntry } from './types'
 
 export interface SQLiteConfig {
   path?: string    // default ':memory:'
@@ -10,7 +10,7 @@ export interface SQLiteConfig {
 // Prevents unbounded memory growth when queries are dynamically constructed.
 const STMT_CACHE_MAX = 500
 
-export class SQLiteAdapter implements VelnAdapter {
+export class SQLiteAdapter implements OakBunAdapter {
   readonly dialect = 'sqlite' as const
   private readonly db: Database
   // LRU cache for prepared statements — Map preserves insertion order.
@@ -69,7 +69,7 @@ export class SQLiteAdapter implements VelnAdapter {
     }
   }
 
-  async transaction<T>(fn: (tx: VelnAdapter) => Promise<T>): Promise<T> {
+  async transaction<T>(fn: (tx: OakBunAdapter) => Promise<T>): Promise<T> {
     // Use db.run() directly — prepared statements for control statements (BEGIN/COMMIT/ROLLBACK)
     // are not reliable in SQLite; db.run() is the correct low-level API for these.
     this.db.run('BEGIN')

@@ -1,4 +1,4 @@
-import type { VelnModule } from './module'
+import type { OakBunModule } from './module'
 import type { Route, BaseCtx } from './types'
 import { generateOpenApiSpec } from '../openapi/generator'
 
@@ -7,7 +7,7 @@ import { generateOpenApiSpec } from '../openapi/generator'
 export interface ScalarOptions {
   /** Mount path for the Scalar UI. Default: '/scalar' */
   path?: string
-  /** API title shown in the Scalar UI. Default: 'Veln API' */
+  /** API title shown in the Scalar UI. Default: 'OakBun API' */
   title?: string
   /** API version shown in the OpenAPI spec. Default: '1.0.0' */
   version?: string
@@ -65,9 +65,9 @@ function renderHtml(specJson: string, title: string, theme: string, jsonUrl: str
  * The app reference is captured by closure so the spec always reflects
  * the current route list at request time — including late-registered modules.
  */
-export function scalarPlugin(app: AppRef, options: ScalarOptions = {}): VelnModule {
+export function scalarPlugin(app: AppRef, options: ScalarOptions = {}): OakBunModule {
   const mountPath   = options.path        ?? '/scalar'
-  const title       = options.title       ?? 'Veln API'
+  const title       = options.title       ?? 'OakBun API'
   const version     = options.version     ?? '1.0.0'
   const description = options.description ?? undefined
   const theme       = options.theme       ?? 'purple'
@@ -125,7 +125,7 @@ export function scalarPlugin(app: AppRef, options: ScalarOptions = {}): VelnModu
     visibility: 'hidden',
   }
 
-  const mod: VelnModule = {
+  const mod: OakBunModule = {
     prefix:              '',
     routes:              [jsonRoute, uiRoute],
     wsRoutes:            [],

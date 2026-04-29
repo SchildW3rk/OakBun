@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { createApp } from '../../packages/core/src/app/index'
 import { defineModule } from '../../packages/core/src/app/module'
 import { createTestClient } from '../../packages/core/src/client/test-client'
-import { VelnClientError } from '../../packages/core/src/client/error'
+import { OakBunClientError } from '../../packages/core/src/client/error'
 
 // ── Shared test app ────────────────────────────────────────────────────────────
 
@@ -150,7 +150,7 @@ describe('createTestClient — errors', () => {
       .build()
     const app = createApp().register(mod)
     const client = createTestClient(app, { throws: true })
-    expect(client.apiBroken.index()).rejects.toBeInstanceOf(VelnClientError)
+    expect(client.apiBroken.index()).rejects.toBeInstanceOf(OakBunClientError)
   })
 })
 

@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test'
 import { definePlugin } from '../../packages/core/src/app/plugin'
 import { defineModule } from '../../packages/core/src/app/module'
 import { createApp } from '../../packages/core/src/app/index'
-import { VelnError } from '../../packages/core/src/errors/index'
+import { OakBunError } from '../../packages/core/src/errors/index'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -98,7 +98,7 @@ describe('.requires() fail-fast with .modules()', () => {
       .extend(() => ({}))
 
     const app = createApp()
-    expect(() => app.plugin(plugin)).toThrow(VelnError)
+    expect(() => app.plugin(plugin)).toThrow(OakBunError)
 
     // Route must not be present — fetch should 404
     // (app.plugin threw, so register() was never called)

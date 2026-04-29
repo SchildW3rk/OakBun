@@ -1,4 +1,4 @@
-import type { VelnAdapter, BindingValue, ExecuteResult, QueryLogEntry } from './types'
+import type { OakBunAdapter, BindingValue, ExecuteResult, QueryLogEntry } from './types'
 
 export interface PostgresConfig {
   url: string
@@ -24,7 +24,7 @@ function unsafeCall(client: any, sql: string, params: BindingValue[]): any {
     : client.unsafe(positional)
 }
 
-export class PostgresAdapter implements VelnAdapter {
+export class PostgresAdapter implements OakBunAdapter {
   readonly dialect = 'postgres' as const
   // Typed as any: Bun.SQL's instance type is not reliably exported across
   // bun-types versions and the class is a Bun global — no stable import path.
@@ -62,9 +62,9 @@ export class PostgresAdapter implements VelnAdapter {
     return { rowsAffected }  // lastInsertId not available without RETURNING clause
   }
 
-  async transaction<T>(fn: (tx: VelnAdapter) => Promise<T>): Promise<T> {
+  async transaction<T>(fn: (tx: OakBunAdapter) => Promise<T>): Promise<T> {
     return this.sql.begin(async (tx: any) => {
-      const txAdapter: VelnAdapter = {
+      const txAdapter: OakBunAdapter = {
         dialect:     'postgres',
         query:       (s, p = []) => unsafeCall(tx, s, p),
         execute:     async (s, p = []) => {

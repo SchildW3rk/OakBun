@@ -28,7 +28,7 @@ async function run() {
 
   // ── 3. Validated messages ─────────────────────────────────────────────────
   await test('Validated — valid payload (/ws/chat)', `${BASE}/ws/chat`, (ws) => {
-    ws.onopen = () => ws.send(JSON.stringify({ text: 'hey veln', room: 'general' }))
+    ws.onopen = () => ws.send(JSON.stringify({ text: 'hey oakbun', room: 'general' }))
     ws.onmessage = (e) => {
       console.log(`  ← received: ${e.data}`)
       ws.close()

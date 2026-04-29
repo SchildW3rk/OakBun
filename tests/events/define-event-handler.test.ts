@@ -122,7 +122,7 @@ describe('EventBus — EventHandlerDef registration', () => {
   })
 })
 
-// ── 4. app.events() — direct registration on Veln ────────────────────────────
+// ── 4. app.events() — direct registration on OakBun ────────────────────────────
 
 describe('app.events()', () => {
   test('registers handler on eventBus — fires after DB insert', async () => {
@@ -181,7 +181,7 @@ describe('app.events()', () => {
   })
 })
 
-// ── 5. ModuleBuilder.events() / VelnModule.eventHandlerDefs ──────────────────
+// ── 5. ModuleBuilder.events() / OakBunModule.eventHandlerDefs ──────────────────
 
 describe('ModuleBuilder.events()', () => {
   test('.events() stores def in eventHandlerDefs', () => {

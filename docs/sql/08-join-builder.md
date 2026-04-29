@@ -84,7 +84,7 @@ interface JoinClause {
 }
 ```
 
-The `on` clause is validated at query construction time — an invalid format throws a `VelnError(500, INVALID_JOIN_ON)`.
+The `on` clause is validated at query construction time — an invalid format throws a `OakBunError(500, INVALID_JOIN_ON)`.
 
 ## When to Use Raw SQL Instead
 

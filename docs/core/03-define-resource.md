@@ -16,7 +16,7 @@ function defineResource<T, S extends SchemaMap>(
   name: string,
   table: TableDef<T, S>,
   options?: ResourceOptions<T, InferInsert<S>>
-): { module: VelnModule }
+): { module: OakBunModule }
 ```
 
 ## Basic Example

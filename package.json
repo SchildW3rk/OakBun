@@ -1,7 +1,7 @@
 {
-  "name": "veln-workspace",
+  "name": "oakbun-workspace",
   "private": true,
-  "workspaces": ["packages/*", "examples/*"],
+  "workspaces": ["packages/*", "examples/*", "benchmarks"],
   "scripts": {
     "build": "bun run --filter 'oakbun' build && bun run --filter './packages/*' build",
     "typecheck": "bun run --filter './packages/*' typecheck",

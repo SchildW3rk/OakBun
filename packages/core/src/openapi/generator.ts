@@ -149,7 +149,7 @@ export function generateOpenApiSpec(
   routes: readonly Route<unknown>[],
   options?: { title?: string; version?: string; description?: string },
 ): OpenApiSpec {
-  const title   = options?.title   ?? 'Veln API'
+  const title   = options?.title   ?? 'OakBun API'
   const version = options?.version ?? '1.0.0'
 
   const info: OpenApiSpec['info'] = { title, version }

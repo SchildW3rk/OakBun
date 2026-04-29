@@ -2,7 +2,7 @@ import { describe, test, expect } from 'bun:test'
 import { z } from 'zod'
 import { SQLiteAdapter }    from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor }     from '../../packages/core/src/hooks/executor'
-import { VelnDB }           from '../../packages/core/src/db/index'
+import { OakBunDB }           from '../../packages/core/src/db/index'
 import { ValidationError }  from '../../packages/core/src/app/types'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import { column }           from '../../packages/core/src/schema/column'
@@ -23,7 +23,7 @@ async function makeDB() {
   await adapter.execute(`INSERT INTO "orders" ("amount", "status") VALUES (100, 'paid')`)
   await adapter.execute(`INSERT INTO "orders" ("amount", "status") VALUES (200, 'pending')`)
   await adapter.execute(`INSERT INTO "orders" ("amount", "status") VALUES (50,  'refunded')`)
-  const db = new VelnDB(adapter, new HookExecutor())
+  const db = new OakBunDB(adapter, new HookExecutor())
   return db.withCtx({})
 }
 
@@ -151,7 +151,7 @@ async function makeJoinDB() {
   await adapter.execute(`INSERT INTO "users" ("name") VALUES ('Bob')`)
   await adapter.execute(`INSERT INTO "posts" ("title", "authorId") VALUES ('Post 1', 1)`)
   await adapter.execute(`INSERT INTO "posts" ("title", "authorId") VALUES ('Post 2', 2)`)
-  const db = new VelnDB(adapter, new HookExecutor())
+  const db = new OakBunDB(adapter, new HookExecutor())
   return db.withCtx({})
 }
 

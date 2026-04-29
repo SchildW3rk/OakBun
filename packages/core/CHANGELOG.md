@@ -87,7 +87,7 @@
 - a9da1d2: feat(cli): pass `ctx` with `db` and `adapter` to custom command actions
 
   `defineCommand().action()` now receives a second argument `ctx: CommandContext`
-  with a `BoundVelnDB` instance and the raw adapter, both resolved from `oak.config.ts`.
+  with a `BoundOakBunDB` instance and the raw adapter, both resolved from `oak.config.ts`.
 
   ```ts
   export default defineCommand("seed")
@@ -103,12 +103,12 @@
 
 ### Patch Changes
 
-- 3fd8bf4: fix(cli): load oak.config.ts instead of veln.config.ts, use config.adapter directly, and scan \*.db files
+- 3fd8bf4: fix(cli): load oak.config.ts instead of oakbun.config.ts, use config.adapter directly, and scan \*.db files
 
-  - `loadConfig()` now checks `oak.config.ts` / `oak.config.js` first (veln.config.\* kept for backwards compat)
+  - `loadConfig()` now checks `oak.config.ts` / `oak.config.js` first (oakbun.config.\* kept for backwards compat)
   - `loadAdapter()` uses `config.adapter` directly if provided in config
   - Glob extended from `*.sqlite` to `*.{sqlite,db}`
-  - `VelnConfig` now has an `adapter` field
+  - `OakBunConfig` now has an `adapter` field
 
 ## 0.2.1
 

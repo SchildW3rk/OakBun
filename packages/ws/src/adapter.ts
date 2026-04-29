@@ -1,7 +1,5 @@
-import type { VelnWsAdapter, WsRouteShape, BaseCtx } from 'oakbun'
-import type { Plugin } from '../../core/src/app/plugin'
-import { matchPath } from '../../core/src/app/router'
-import { VelnError } from '../../core/src/errors/index'
+import { matchPath, OakBunError } from 'oakbun'
+import type { OakBunWsAdapter, WsRouteShape, BaseCtx, Plugin } from 'oakbun'
 import type { WsCtx, WsCtxData, WsRoute, WsRouteHandler } from './types'
 import { normalizeWsHandler } from './types'
 
@@ -19,9 +17,9 @@ interface RateLimitState {
   resetAt: number
 }
 
-// ── VelnWsAdapterImpl ─────────────────────────────────────────────────────────
+// ── OakBunWsAdapterImpl ─────────────────────────────────────────────────────────
 
-export class VelnWsAdapterImpl implements VelnWsAdapter {
+export class OakBunWsAdapterImpl implements OakBunWsAdapter {
   // WS route store — keyed by registered path pattern (e.g. '/chat', '/rooms/:id')
   private readonly _routes: Map<string, WsRoute> = new Map()
 
@@ -131,7 +129,7 @@ export class VelnWsAdapterImpl implements VelnWsAdapter {
       }
     } catch (err) {
       // Plugin error during upgrade — return HTTP error response
-      if (err instanceof VelnError) {
+      if (err instanceof OakBunError) {
         return Response.json(
           { error: err.name, code: err.code, message: err.message },
           { status: err.status },
@@ -184,7 +182,7 @@ export class VelnWsAdapterImpl implements VelnWsAdapter {
         if (!route?.handlers.open) return
         const ctx = this._buildCtx(ws, undefined)
         Promise.resolve(route.handlers.open(ctx)).catch((err) =>
-          console.error('[veln:ws] open handler error:', err),
+          console.error('[oakbun:ws] open handler error:', err),
         )
       },
 
@@ -232,7 +230,7 @@ export class VelnWsAdapterImpl implements VelnWsAdapter {
 
         const ctx = this._buildCtx(ws, data)
         Promise.resolve(route.handlers.message(ctx, raw)).catch((err) =>
-          console.error('[veln:ws] message handler error:', err),
+          console.error('[oakbun:ws] message handler error:', err),
         )
       },
 
@@ -241,7 +239,7 @@ export class VelnWsAdapterImpl implements VelnWsAdapter {
         if (!route?.handlers.close) return
         const ctx = this._buildCtx(ws, undefined)
         Promise.resolve(route.handlers.close(ctx, code, reason)).catch((err) =>
-          console.error('[veln:ws] close handler error:', err),
+          console.error('[oakbun:ws] close handler error:', err),
         )
       },
 
@@ -250,7 +248,7 @@ export class VelnWsAdapterImpl implements VelnWsAdapter {
         if (!route?.handlers.drain) return
         const ctx = this._buildCtx(ws, undefined)
         Promise.resolve(route.handlers.drain(ctx)).catch((err) =>
-          console.error('[veln:ws] drain handler error:', err),
+          console.error('[oakbun:ws] drain handler error:', err),
         )
       },
     } as import('bun').WebSocketHandler<Record<string, unknown>>
@@ -273,7 +271,7 @@ export class VelnWsAdapterImpl implements VelnWsAdapter {
 // ── createWsAdapter ───────────────────────────────────────────────────────────
 
 /**
- * createWsAdapter() — creates a VelnWsAdapter for use with Veln apps.
+ * createWsAdapter() — creates a OakBunWsAdapter for use with OakBun apps.
  *
  * Usage:
  *   import { createWsAdapter } from '@oakbun/ws'
@@ -284,6 +282,6 @@ export class VelnWsAdapterImpl implements VelnWsAdapter {
  *     message(ctx, raw) { ctx.ws.send(raw) },
  *   })
  */
-export function createWsAdapter(rateLimit?: WsRateLimitConfig): VelnWsAdapterImpl {
-  return new VelnWsAdapterImpl(rateLimit)
+export function createWsAdapter(rateLimit?: WsRateLimitConfig): OakBunWsAdapterImpl {
+  return new OakBunWsAdapterImpl(rateLimit)
 }

@@ -8,7 +8,7 @@ import { column } from '../../packages/core/src/schema/column'
 import { generateMigration } from '../../packages/core/src/db/migrations/generator'
 
 async function makeTempDir(): Promise<string> {
-  return mkdtemp(join(tmpdir(), 'veln-gen-'))
+  return mkdtemp(join(tmpdir(), 'oakbun-gen-'))
 }
 
 async function cleanDir(dir: string) {

@@ -31,7 +31,7 @@ export interface ServiceDeclaration<TKey extends string, TDef> {
   readonly service: ServiceDef<TKey, TDef>
 }
 
-export interface VelnModule {
+export interface OakBunModule {
   prefix: string
   routes: Route<any>[]
   wsRoutes: WsRouteShape[]
@@ -125,7 +125,7 @@ export class ModuleBuilder<TCtx extends BaseCtx, TPrefix extends string = string
     return new ModuleBuilder<NCtx, NPrefix, NRoutes>({ ...this._state, ...overrides })
   }
 
-  // Framework-internal accessor — used by @veln/ws module augmentation.
+  // Framework-internal accessor — used by @oakbun/ws module augmentation.
   // Not part of the public API — prefixed with _ to signal framework-only.
   get _wsRoutes(): WsRouteShape[] { return this._state.wsRoutes }
 
@@ -510,9 +510,9 @@ export class ModuleBuilder<TCtx extends BaseCtx, TPrefix extends string = string
     return this.clone({ onError: handler as ErrorHandler<any> })
   }
 
-  build(): VelnModule & { readonly _routes: TRoutes; readonly _prefix: TPrefix } {
+  build(): OakBunModule & { readonly _routes: TRoutes; readonly _prefix: TPrefix } {
     const s = this._state
-    const mod: VelnModule = {
+    const mod: OakBunModule = {
       prefix:              s.prefix,
       routes:              [...s.routes],
       wsRoutes:            [...s.wsRoutes],
@@ -533,7 +533,7 @@ export class ModuleBuilder<TCtx extends BaseCtx, TPrefix extends string = string
     }
     // Phantom cast — _routes and _prefix don't exist at runtime,
     // they only carry type information for createProxyClient / .module()
-    return mod as VelnModule & { readonly _routes: TRoutes; readonly _prefix: TPrefix }
+    return mod as OakBunModule & { readonly _routes: TRoutes; readonly _prefix: TPrefix }
   }
 }
 

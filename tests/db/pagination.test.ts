@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 import { SQLiteAdapter }       from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor }        from '../../packages/core/src/hooks/executor'
-import { VelnDB }              from '../../packages/core/src/db/index'
+import { OakBunDB }              from '../../packages/core/src/db/index'
 import { buildSelect, buildJoinSelect } from '../../packages/core/src/db/sql'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import type { InferRow }       from '../../packages/core/src/schema/table'
@@ -23,12 +23,12 @@ type User = InferRow<typeof usersTable.schema>
 function setup() {
   const adapter = new SQLiteAdapter()
   const exec    = new HookExecutor()
-  const db      = new VelnDB(adapter, exec)
+  const db      = new OakBunDB(adapter, exec)
   const bound   = db.withCtx({})
   return { adapter, bound }
 }
 
-async function seedUsers(adapter: SQLiteAdapter, bound: ReturnType<VelnDB['withCtx']>): Promise<void> {
+async function seedUsers(adapter: SQLiteAdapter, bound: ReturnType<OakBunDB['withCtx']>): Promise<void> {
   await adapter.execute(toCreateTableSql(usersTable))
   for (const name of ['Alice', 'Bob', 'Carol', 'Dave', 'Eve']) {
     await bound.into(usersTable).insert({ name, role: 'user' })
@@ -122,7 +122,7 @@ describe('buildSelect — LIMIT/OFFSET/ORDER BY SQL generation', () => {
 // ── Part 2: SelectBuilder fluent API ──────────────────────────────────────
 
 describe('SelectBuilder — .limit() / .offset() / .orderBy() / .page()', () => {
-  let bound: ReturnType<VelnDB['withCtx']>
+  let bound: ReturnType<OakBunDB['withCtx']>
   let adapter: SQLiteAdapter
 
   beforeEach(async () => {
@@ -222,7 +222,7 @@ describe('JoinBuilder — .limit() / .offset() / .orderBy() / .page()', () => {
     total:  column.integer(),
   }).build()
 
-  let bound: ReturnType<VelnDB['withCtx']>
+  let bound: ReturnType<OakBunDB['withCtx']>
   let adapter: SQLiteAdapter
 
   beforeEach(async () => {

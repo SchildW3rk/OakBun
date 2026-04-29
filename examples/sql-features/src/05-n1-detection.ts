@@ -12,7 +12,7 @@
  *     ...
  *
  * Der QueryLog wird pro Request zurückgesetzt — kein shared state zwischen
- * gleichzeitigen Requests (BoundVelnDB wrappt den Adapter per-Request).
+ * gleichzeitigen Requests (BoundOakBunDB wrappt den Adapter per-Request).
  */
 
 import { createApp, dbPlugin } from 'oakbun'

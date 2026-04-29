@@ -44,7 +44,7 @@ const mysql = new MySQLAdapter({ url: process.env.DATABASE_URL })
 
 ## resolveAdapter
 
-`resolveAdapter` lets you configure the adapter via an `AdapterConfig` object or pass an existing `VelnAdapter` instance:
+`resolveAdapter` lets you configure the adapter via an `AdapterConfig` object or pass an existing `OakBunAdapter` instance:
 
 ```ts
 import { resolveAdapter } from 'oakbun'
@@ -54,9 +54,9 @@ const adapter = resolveAdapter({ type: 'sqlite', filename: 'app.db' })
 const adapter = resolveAdapter({ type: 'postgres', url: process.env.DATABASE_URL })
 ```
 
-## ctx.db — BoundVelnDB
+## ctx.db — BoundOakBunDB
 
-Every request receives a `BoundVelnDB` — a per-request database handle that tracks query counts and holds the request's hook executor.
+Every request receives a `BoundOakBunDB` — a per-request database handle that tracks query counts and holds the request's hook executor.
 
 ```ts
 // In a route handler:
@@ -67,12 +67,12 @@ ctx.db.from(usersTable).where({ id: 1 }).delete()
 ctx.db.raw('SELECT COUNT(*) FROM users')
 ```
 
-## VelnDB vs BoundVelnDB
+## OakBunDB vs BoundOakBunDB
 
 | Class | Use | Description |
 |---|---|---|
-| `VelnDB` | Instantiated by `dbPlugin` | Holds the adapter + hook executor |
-| `BoundVelnDB` | On `ctx.db` | Per-request; tracks query log, event queue |
+| `OakBunDB` | Instantiated by `dbPlugin` | Holds the adapter + hook executor |
+| `BoundOakBunDB` | On `ctx.db` | Per-request; tracks query log, event queue |
 
 ## Transactions
 

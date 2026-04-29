@@ -5,7 +5,7 @@ import { EventBus, RequestEventQueue } from '../../packages/core/src/events/inde
 import { defineTable } from '../../packages/core/src/schema/table'
 import { column } from '../../packages/core/src/schema/column'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
-import { VelnDB } from '../../packages/core/src/db/index'
+import { OakBunDB } from '../../packages/core/src/db/index'
 import { toCreateTableSql } from '../../packages/core/src/schema/table'
 
 // ── onEvent() — typed Table overload ─────────────────────────
@@ -31,7 +31,7 @@ describe('onEvent() — typed Table overload', () => {
 
     const adapter = new SQLiteAdapter()
     await adapter.execute(toCreateTableSql(postsTable))
-    const db = new VelnDB(adapter, executor)
+    const db = new OakBunDB(adapter, executor)
 
     // Create a queue, bind it to the DB context, run insert, then flush
     const queue = new RequestEventQueue()
@@ -69,7 +69,7 @@ describe('onEvent() — typed Table overload', () => {
 
     const adapter = new SQLiteAdapter()
     await adapter.execute(toCreateTableSql(usersTable2))
-    const db = new VelnDB(adapter, executor)
+    const db = new OakBunDB(adapter, executor)
     const queue = new RequestEventQueue()
     const bound = db.withCtx({}, queue)
 
@@ -127,7 +127,7 @@ describe('onEvent() — typed Table overload', () => {
 
     const adapter = new SQLiteAdapter()
     await adapter.execute(toCreateTableSql(itemsTable))
-    const db = new VelnDB(adapter, executor)
+    const db = new OakBunDB(adapter, executor)
     const queue = new RequestEventQueue()
     const bound = db.withCtx({}, queue)
 

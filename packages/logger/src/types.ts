@@ -1,9 +1,9 @@
-export interface VelnLogger {
+export interface OakBunLogger {
   info(msg: string, data?: Record<string, unknown>): void
   warn(msg: string, data?: Record<string, unknown>): void
   error(msg: string, data?: Record<string, unknown>): void
   debug(msg: string, data?: Record<string, unknown>): void
-  child(scope: string): VelnLogger
+  child(scope: string): OakBunLogger
 }
 
 export interface LoggerOptions {

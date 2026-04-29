@@ -75,15 +75,15 @@ defineModule('/dashboard')
   .build()
 ```
 
-## VelnAdapter for Better Auth
+## OakBunAdapter for Better Auth
 
-`@oakbun/auth` includes a `createVelnDbAdapter` that wraps `BoundVelnDB` as a Better Auth database adapter:
+`@oakbun/auth` includes a `createOakBunDbAdapter` that wraps `BoundOakBunDB` as a Better Auth database adapter:
 
 ```ts
-import { createVelnDbAdapter } from '@oakbun/auth'
+import { createOakBunDbAdapter } from '@oakbun/auth'
 
 // Usually handled automatically by betterAuthPlugin
-const dbAdapter = createVelnDbAdapter(ctx.db)
+const dbAdapter = createOakBunDbAdapter(ctx.db)
 ```
 
 ## Auth Tables

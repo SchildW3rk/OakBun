@@ -1,5 +1,5 @@
 // Adapter
-export type { VelnAdapter, BindingValue, ExecuteResult, QueryLogEntry } from './adapter/types'
+export type { OakBunAdapter, BindingValue, ExecuteResult, QueryLogEntry } from './adapter/types'
 export { SQLiteAdapter }                                  from './adapter/sqlite'
 export type { SQLiteConfig }                              from './adapter/sqlite'
 export { PostgresAdapter }                                from './adapter/postgres'
@@ -38,7 +38,7 @@ export type {
 } from './db/migrations/index'
 
 // DB
-export { VelnDB, BoundVelnDB, SelectBuilder, InsertBuilder, JoinBuilder, SoftDeleteBuilder, UnionBuilder } from './db/index'
+export { OakBunDB, BoundOakBunDB, SelectBuilder, InsertBuilder, JoinBuilder, SoftDeleteBuilder, UnionBuilder } from './db/index'
 export type {
   PendingEvent, TransactionResult, QueryLog,
 }                                                            from './db/index'
@@ -50,7 +50,7 @@ export type { EventBus as EventBusInterface }                 from './db/index'
 // Events
 export { InMemoryEventBus, EventBus, RequestEventQueue }      from './events/index'
 export type { EventBusAdapter, EventBusOptions, EventBusErrorHandler } from './events/index'
-export type { EventHandler, VelnEvents }                      from './events/index'
+export type { EventHandler, OakBunEvents }                      from './events/index'
 export { defineEventHandler, EventHandlerBuilder }            from './events/handler'
 export type { EventHandlerDef, EventCallback, EventHandlerFn } from './events/handler'
 
@@ -65,12 +65,14 @@ export type { ServiceDef }                                    from './service/in
 // Middleware
 export { defineMiddleware, MiddlewareBuilder }                from './app/middleware'
 export type { MiddlewareDef }                                 from './app/middleware'
+export { matchPath }                                          from './app/router'
+export type { MatchResult }                                   from './app/router'
 
 // App
-export { createApp, Veln }                                    from './app/index'
+export { createApp, OakBun }                                    from './app/index'
 export { createSystemCtx }                                    from './app/system-ctx'
 export { defineModule, ModuleBuilder }                        from './app/module'
-export type { VelnModule, HookDeclaration, AuditDeclaration, ServiceDeclaration }  from './app/module'
+export type { OakBunModule, HookDeclaration, AuditDeclaration, ServiceDeclaration }  from './app/module'
 export { loggerPlugin, dbPlugin, eventBusPlugin, createPlugin, definePlugin, PluginBuilder } from './app/plugin'
 export type { DbPluginConfig, DbLogOptions, NavItem }           from './app/plugin'
 export type { Plugin }                                          from './app/plugin'
@@ -94,7 +96,7 @@ export { compressionPlugin }         from './app/compression'
 export type { CompressionOptions }   from './app/compression'
 export { healthPlugin }              from './app/health'
 export type { HealthPluginOptions, HealthCheck, HealthPlugin } from './app/health'
-export type { VelnWsAdapter, WsRouteShape } from './app/types'
+export type { OakBunWsAdapter, WsRouteShape } from './app/types'
 export type { RouteSchema, RouteHandlerWithSchema, InferCtx }        from './app/types'
 export type { RouteMap, RouteEntry, RouteKey }                        from './app/types'
 export type { StreamController, StreamOptions, SseController }        from './app/types'
@@ -106,7 +108,7 @@ export { createProxyClient, createModuleClient, pathToClientKey }     from './cl
 export type { ClientResult, InferProxyClient, ProxyClientOptions }    from './client/index'
 export { createTestClient }                                           from './client/test-client'
 export type { TestClientOptions }                                     from './client/test-client'
-export { VelnClientError }                                            from './client/error'
+export { OakBunClientError }                                            from './client/error'
 
 // OpenAPI
 export { generateOpenApiSpec }    from './openapi/generator'
@@ -124,11 +126,11 @@ export type { CronDef, CronBuilder, CronCtx, CronBuildOptions, LogLevel, CronLoc
 
 // CLI config helpers
 export { defineConfig, defineCommand } from './cli/index'
-export type { VelnConfig, CommandDef, CommandOption, CommandContext } from './cli/index'
+export type { OakBunConfig, CommandDef, CommandOption, CommandContext } from './cli/index'
 
 // Errors
 export {
-  VelnError,
+  OakBunError,
   BadRequestError,
   UnauthorizedError,
   ForbiddenError,

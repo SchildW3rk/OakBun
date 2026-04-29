@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 import { SQLiteAdapter }    from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor }     from '../../packages/core/src/hooks/executor'
-import { VelnDB }           from '../../packages/core/src/db/index'
+import { OakBunDB }           from '../../packages/core/src/db/index'
 import type { QueryLog }    from '../../packages/core/src/db/index'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import { column }           from '../../packages/core/src/schema/column'
@@ -25,7 +25,7 @@ function makeAdapter(): SQLiteAdapter {
   return new SQLiteAdapter()
 }
 
-async function seedItems(adapter: SQLiteAdapter, db: ReturnType<VelnDB['withCtx']>): Promise<void> {
+async function seedItems(adapter: SQLiteAdapter, db: ReturnType<OakBunDB['withCtx']>): Promise<void> {
   await adapter.execute(toCreateTableSql(itemsTable))
   await db.into(itemsTable).insert({ name: 'Alpha' })
   await db.into(itemsTable).insert({ name: 'Beta' })
@@ -129,26 +129,26 @@ describe('adapter.onQuery — disabled by default', () => {
   })
 })
 
-// ── Part 3: BoundVelnDB._queryCount ───────────────────────────────────────
+// ── Part 3: BoundOakBunDB._queryCount ───────────────────────────────────────
 
-describe('BoundVelnDB._queryCount', () => {
+describe('BoundOakBunDB._queryCount', () => {
   let adapter: SQLiteAdapter
-  let velnDB: VelnDB
+  let oakBunDB: OakBunDB
 
   beforeEach(() => {
     adapter = makeAdapter()
-    velnDB = new VelnDB(adapter, new HookExecutor())
+    oakBunDB = new OakBunDB(adapter, new HookExecutor())
   })
 
   test('_queryCount starts at 0', async () => {
     await adapter.execute(toCreateTableSql(itemsTable))
-    const db = velnDB.withCtx({})
+    const db = oakBunDB.withCtx({})
     expect(db._queryCount).toBe(0)
   })
 
   test('_queryCount stays 0 when no onQuery observer is wired', async () => {
     await adapter.execute(toCreateTableSql(itemsTable))
-    const db = velnDB.withCtx({})
+    const db = oakBunDB.withCtx({})
     await db.from(itemsTable).select()
     // Without a per-request observer, _queryCount is not incremented
     expect(db._queryCount).toBe(0)
@@ -159,7 +159,7 @@ describe('BoundVelnDB._queryCount', () => {
     await adapter.execute('INSERT INTO "items" ("name") VALUES (?)', ['X'])
 
     const log = makeQueryLog()
-    const db = velnDB.withCtx({}, undefined, log)
+    const db = oakBunDB.withCtx({}, undefined, log)
 
     await db.from(itemsTable).select()
     expect(db._queryCount).toBe(1)
@@ -174,7 +174,7 @@ describe('BoundVelnDB._queryCount', () => {
     await adapter.execute(toCreateTableSql(itemsTable))
 
     const log = makeQueryLog()
-    const db = velnDB.withCtx({}, undefined, log)
+    const db = oakBunDB.withCtx({}, undefined, log)
     await db.into(itemsTable).insert({ name: 'Test' })
 
     // INSERT uses adapter.query() (RETURNING *) — counted
@@ -182,13 +182,13 @@ describe('BoundVelnDB._queryCount', () => {
     expect(log.queries).toBeGreaterThanOrEqual(1)
   })
 
-  test('_queryCount is independent across BoundVelnDB instances', async () => {
+  test('_queryCount is independent across BoundOakBunDB instances', async () => {
     await adapter.execute(toCreateTableSql(itemsTable))
 
     const log1 = makeQueryLog()
     const log2 = makeQueryLog()
-    const db1 = velnDB.withCtx({}, undefined, log1)
-    const db2 = velnDB.withCtx({}, undefined, log2)
+    const db1 = oakBunDB.withCtx({}, undefined, log1)
+    const db2 = oakBunDB.withCtx({}, undefined, log2)
 
     await db1.from(itemsTable).select()
     await db1.from(itemsTable).select()
@@ -202,13 +202,13 @@ describe('BoundVelnDB._queryCount', () => {
 
 // ── Part 4: QueryLog per-request tracking ─────────────────────────────────
 
-describe('BoundVelnDB — QueryLog per-request tracking', () => {
+describe('BoundOakBunDB — QueryLog per-request tracking', () => {
   test('QueryLog.entries populated when logQueries is true', async () => {
     const adapter = makeAdapter()
     await adapter.execute(toCreateTableSql(itemsTable))
     await adapter.execute('INSERT INTO "items" ("name") VALUES (?)', ['Alpha'])
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
     const log = makeQueryLog({ logQueries: true })
     const bound = db.withCtx({}, undefined, log)
 
@@ -224,7 +224,7 @@ describe('BoundVelnDB — QueryLog per-request tracking', () => {
     const adapter = makeAdapter()
     await adapter.execute(toCreateTableSql(itemsTable))
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
     const log = makeQueryLog({ logQueries: false })
     const bound = db.withCtx({}, undefined, log)
 
@@ -238,7 +238,7 @@ describe('BoundVelnDB — QueryLog per-request tracking', () => {
     const adapter = makeAdapter()
     await adapter.execute(toCreateTableSql(itemsTable))
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
     const log = makeQueryLog()
     const bound = db.withCtx({}, undefined, log)
 
@@ -256,7 +256,7 @@ describe('BoundVelnDB — QueryLog per-request tracking', () => {
     adapter.onQuery = () => {}
     const originalOnQuery = adapter.onQuery
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
     db.withCtx({}, undefined, makeQueryLog())
 
     // adapter.onQuery must not be replaced
@@ -270,7 +270,7 @@ describe('BoundVelnDB — QueryLog per-request tracking', () => {
     const adapterCalls: string[] = []
     adapter.onQuery = (e) => adapterCalls.push(e.type)
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
     const log = makeQueryLog()
     const bound = db.withCtx({}, undefined, log)
 

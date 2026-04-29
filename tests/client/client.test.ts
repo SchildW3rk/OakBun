@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test'
 import { z } from 'zod'
 import { createApp } from '../../packages/core/src/app/index'
-import { createClient, VelnClientError } from '../../packages/core/src/client/index'
+import { createClient, OakBunClientError } from '../../packages/core/src/client/index'
 import { ValidationError } from '../../packages/core/src/app/types'
 
 // ── Shared test app ────────────────────────────────────────────────────────────
@@ -103,7 +103,7 @@ describe('createClient — happy path', () => {
 // ── Unhappy Path ───────────────────────────────────────────────────────────────
 
 describe('createClient — unhappy path', () => {
-  test('404 → VelnClientError with status 404', async () => {
+  test('404 → OakBunClientError with status 404', async () => {
     const app = makeTestApp()
     const client = createClient<typeof app>('http://localhost', {
       fetch: app.fetch.bind(app),
@@ -116,11 +116,11 @@ describe('createClient — unhappy path', () => {
       thrown = err
     }
 
-    expect(thrown).toBeInstanceOf(VelnClientError)
-    expect((thrown as VelnClientError).status).toBe(404)
+    expect(thrown).toBeInstanceOf(OakBunClientError)
+    expect((thrown as OakBunClientError).status).toBe(404)
   })
 
-  test('422 → VelnClientError with status 422 and issues array', async () => {
+  test('422 → OakBunClientError with status 422 and issues array', async () => {
     const app = makeTestApp()
     const client = createClient<typeof app>('http://localhost', {
       fetch: app.fetch.bind(app),
@@ -133,14 +133,14 @@ describe('createClient — unhappy path', () => {
       thrown = err
     }
 
-    expect(thrown).toBeInstanceOf(VelnClientError)
-    expect((thrown as VelnClientError).status).toBe(422)
-    expect((thrown as VelnClientError).issues).toBeDefined()
-    expect(Array.isArray((thrown as VelnClientError).issues)).toBe(true)
-    expect((thrown as VelnClientError).issues!.length).toBeGreaterThan(0)
+    expect(thrown).toBeInstanceOf(OakBunClientError)
+    expect((thrown as OakBunClientError).status).toBe(422)
+    expect((thrown as OakBunClientError).issues).toBeDefined()
+    expect(Array.isArray((thrown as OakBunClientError).issues)).toBe(true)
+    expect((thrown as OakBunClientError).issues!.length).toBeGreaterThan(0)
   })
 
-  test('500 → VelnClientError with status 500', async () => {
+  test('500 → OakBunClientError with status 500', async () => {
     const app = createApp()
     app.get('/boom', () => {
       throw new Error('internal error')
@@ -158,7 +158,7 @@ describe('createClient — unhappy path', () => {
       thrown = err
     }
 
-    expect(thrown).toBeInstanceOf(VelnClientError)
-    expect((thrown as VelnClientError).status).toBe(500)
+    expect(thrown).toBeInstanceOf(OakBunClientError)
+    expect((thrown as OakBunClientError).status).toBe(500)
   })
 })

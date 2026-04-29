@@ -1,17 +1,17 @@
-import { VelnDB, HookExecutor, toCreateTableSql } from 'oakbun'
-import type { BoundVelnDB, VelnAdapter } from 'oakbun'
+import { OakBunDB, HookExecutor, toCreateTableSql } from 'oakbun'
+import type { BoundOakBunDB, OakBunAdapter } from 'oakbun'
 import { usersTable, postsTable, commentsTable, tagsTable } from './schema'
 
 /**
- * Create a BoundVelnDB for standalone scripts.
+ * Create a BoundOakBunDB for standalone scripts.
  * No hooks are registered so hook callbacks never fire — fine for examples.
  */
-export function createDB(adapter: VelnAdapter): BoundVelnDB {
-  return new VelnDB(adapter, new HookExecutor()).withCtx({})
+export function createDB(adapter: OakBunAdapter): BoundOakBunDB {
+  return new OakBunDB(adapter, new HookExecutor()).withCtx({})
 }
 
 /** Create all tables needed by the examples. */
-export async function createTables(adapter: VelnAdapter) {
+export async function createTables(adapter: OakBunAdapter) {
   await adapter.execute(toCreateTableSql(usersTable))
   await adapter.execute(toCreateTableSql(postsTable))
   await adapter.execute(toCreateTableSql(commentsTable))
@@ -22,7 +22,7 @@ export async function createTables(adapter: VelnAdapter) {
  * Insert a consistent dataset used by all examples.
  * Returns created entities so examples can reference them by id.
  */
-export async function seed(db: BoundVelnDB) {
+export async function seed(db: BoundOakBunDB) {
   const [alice, bob, charlie] = await db.into(usersTable).insertMany([
     { name: 'Alice',   email: 'alice@example.com',   role: 'admin'  },
     { name: 'Bob',     email: 'bob@example.com',     role: 'editor' },

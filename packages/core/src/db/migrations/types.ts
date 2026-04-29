@@ -12,7 +12,7 @@ export interface MigrationStatus {
 
 export interface MigratorOptions {
   migrationsDir:    string
-  tableName?:       string  // default: '_veln_migrations'
+  tableName?:       string  // default: '_oakbun_migrations'
   onBeforeMigrate?: (migration: { name: string; sql: string }) => void | Promise<void>
   onAfterMigrate?:  (migration: { name: string; sql: string; durationMs: number }) => void | Promise<void>
   onError?:         (migration: { name: string; error: Error }) => void | Promise<void>

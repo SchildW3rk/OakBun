@@ -20,7 +20,7 @@ import type { Comment, CommentTypes } from '../schema/comments'
 import { auditLogs }     from '../schema/audit'
 import { requireAuth }   from '../guards/auth.guard'
 
-const SECRET = process.env.JWT_SECRET ?? 'veln-example-development-secret-change-in-production'
+const SECRET = process.env.JWT_SECRET ?? 'oakbun-example-development-secret-change-in-production'
 
 type CommentRow    = InferRow<typeof commentsTable>
 type CommentInsert = InferInsert<typeof commentsTable>

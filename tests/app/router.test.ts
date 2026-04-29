@@ -15,9 +15,9 @@ describe('matchPath', () => {
   })
 
   test('multiple params — /orgs/:org/repos/:repo', () => {
-    const result = matchPath('/orgs/:org/repos/:repo', '/orgs/veln/repos/core')
+    const result = matchPath('/orgs/:org/repos/:repo', '/orgs/oakbun/repos/core')
     expect(result).not.toBeNull()
-    expect(result!.params).toEqual({ org: 'veln', repo: 'core' })
+    expect(result!.params).toEqual({ org: 'oakbun', repo: 'core' })
   })
 
   test('no match — returns null', () => {

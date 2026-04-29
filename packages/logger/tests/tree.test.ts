@@ -14,27 +14,27 @@ describe('printRouteTree', () => {
   ]
 
   test('contains ungrouped route', () => {
-    const tree = stripAnsi(printRouteTree(routes, { title: 'Veln', port: 4560 }))
+    const tree = stripAnsi(printRouteTree(routes, { title: 'OakBun', port: 4560 }))
     expect(tree).toContain('GET    /health')
   })
 
   test('contains module name', () => {
-    const tree = stripAnsi(printRouteTree(routes, { title: 'Veln', port: 4560 }))
+    const tree = stripAnsi(printRouteTree(routes, { title: 'OakBun', port: 4560 }))
     expect(tree).toContain('users')
   })
 
   test('contains grouped route method and path', () => {
-    const tree = stripAnsi(printRouteTree(routes, { title: 'Veln', port: 4560 }))
+    const tree = stripAnsi(printRouteTree(routes, { title: 'OakBun', port: 4560 }))
     expect(tree).toContain('POST   /users')
   })
 
   test('contains lock emoji for protected route', () => {
-    const tree = stripAnsi(printRouteTree(routes, { title: 'Veln', port: 4560 }))
+    const tree = stripAnsi(printRouteTree(routes, { title: 'OakBun', port: 4560 }))
     expect(tree).toContain('🔒')
   })
 
   test('contains port', () => {
-    const tree = stripAnsi(printRouteTree(routes, { title: 'Veln', port: 4560 }))
+    const tree = stripAnsi(printRouteTree(routes, { title: 'OakBun', port: 4560 }))
     expect(tree).toContain(':4560')
   })
 

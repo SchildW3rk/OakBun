@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import type { ServiceDef } from '../../service/index'
-import type { VelnConfig } from '../config/types'
+import type { OakBunConfig } from '../config/types'
 import { TABLE_SCAN_PATHS } from '../config/defaults'
 
 function isServiceDef(x: unknown): x is ServiceDef<string, unknown> {
@@ -12,7 +12,7 @@ function isServiceDef(x: unknown): x is ServiceDef<string, unknown> {
   )
 }
 
-function resolveScanPaths(config: VelnConfig): string[] {
+function resolveScanPaths(config: OakBunConfig): string[] {
   const cwd      = process.cwd()
   const relative = config.features
     ? [config.features]
@@ -22,7 +22,7 @@ function resolveScanPaths(config: VelnConfig): string[] {
   return relative.map(p => resolve(cwd, p))
 }
 
-export async function discoverServices(config: VelnConfig): Promise<ServiceDef<string, unknown>[]> {
+export async function discoverServices(config: OakBunConfig): Promise<ServiceDef<string, unknown>[]> {
   const found:     ServiceDef<string, unknown>[] = []
   const scanPaths = resolveScanPaths(config)
 

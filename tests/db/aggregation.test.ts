@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 import { SQLiteAdapter }    from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor }     from '../../packages/core/src/hooks/executor'
-import { VelnDB }           from '../../packages/core/src/db/index'
+import { OakBunDB }           from '../../packages/core/src/db/index'
 import { buildSelect }      from '../../packages/core/src/db/sql'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import { column }           from '../../packages/core/src/schema/column'
@@ -28,12 +28,12 @@ const usersTable = defineTable('users', {
 
 function setup() {
   const adapter = new SQLiteAdapter()
-  const db      = new VelnDB(adapter, new HookExecutor())
+  const db      = new OakBunDB(adapter, new HookExecutor())
   const bound   = db.withCtx({})
   return { adapter, bound }
 }
 
-async function seedOrders(adapter: SQLiteAdapter, bound: ReturnType<VelnDB['withCtx']>) {
+async function seedOrders(adapter: SQLiteAdapter, bound: ReturnType<OakBunDB['withCtx']>) {
   await adapter.execute(toCreateTableSql(ordersTable))
   // status: paid×3, pending×2, refunded×1 — amounts: 100,200,300,50,150,75
   await bound.into(ordersTable).insert({ userId: 1, status: 'paid',     amount: 100 })
@@ -44,7 +44,7 @@ async function seedOrders(adapter: SQLiteAdapter, bound: ReturnType<VelnDB['with
   await bound.into(ordersTable).insert({ userId: 3, status: 'refunded', amount: 75  })
 }
 
-async function seedUsers(adapter: SQLiteAdapter, bound: ReturnType<VelnDB['withCtx']>) {
+async function seedUsers(adapter: SQLiteAdapter, bound: ReturnType<OakBunDB['withCtx']>) {
   await adapter.execute(toCreateTableSql(usersTable))
   await bound.into(usersTable).insert({ name: 'Alice', role: 'admin' })
   await bound.into(usersTable).insert({ name: 'Bob',   role: 'user'  })
@@ -135,7 +135,7 @@ describe('buildSelect — columns / groupBy / aggregates / having', () => {
 // ── Part 2: .columns() — column selection ─────────────────────────────────
 
 describe('SelectBuilder — .columns()', () => {
-  let bound: ReturnType<VelnDB['withCtx']>
+  let bound: ReturnType<OakBunDB['withCtx']>
   let adapter: SQLiteAdapter
 
   beforeEach(async () => {
@@ -176,7 +176,7 @@ describe('SelectBuilder — .columns()', () => {
 // ── Part 3: .count() — scalar aggregate ────────────────────────────────────
 
 describe('SelectBuilder — .count()', () => {
-  let bound: ReturnType<VelnDB['withCtx']>
+  let bound: ReturnType<OakBunDB['withCtx']>
   let adapter: SQLiteAdapter
 
   beforeEach(async () => {
@@ -214,7 +214,7 @@ describe('SelectBuilder — .count()', () => {
 // ── Part 4: .sum() / .avg() / .min() / .max() ─────────────────────────────
 
 describe('SelectBuilder — sum / avg / min / max', () => {
-  let bound: ReturnType<VelnDB['withCtx']>
+  let bound: ReturnType<OakBunDB['withCtx']>
   let adapter: SQLiteAdapter
 
   beforeEach(async () => {
@@ -262,7 +262,7 @@ describe('SelectBuilder — sum / avg / min / max', () => {
 // ── Part 5: .groupBy() + .aggregate() ──────────────────────────────────────
 
 describe('SelectBuilder — .groupBy() + .aggregate()', () => {
-  let bound: ReturnType<VelnDB['withCtx']>
+  let bound: ReturnType<OakBunDB['withCtx']>
   let adapter: SQLiteAdapter
 
   beforeEach(async () => {
@@ -347,7 +347,7 @@ describe('SelectBuilder — .groupBy() + .aggregate()', () => {
 // ── Part 6: .having() ──────────────────────────────────────────────────────
 
 describe('SelectBuilder — .having()', () => {
-  let bound: ReturnType<VelnDB['withCtx']>
+  let bound: ReturnType<OakBunDB['withCtx']>
   let adapter: SQLiteAdapter
 
   beforeEach(async () => {
@@ -392,7 +392,7 @@ describe('SelectBuilder — .having()', () => {
 // ── Part 7: combined chains ────────────────────────────────────────────────
 
 describe('SelectBuilder — combined aggregation chains', () => {
-  let bound: ReturnType<VelnDB['withCtx']>
+  let bound: ReturnType<OakBunDB['withCtx']>
   let adapter: SQLiteAdapter
 
   beforeEach(async () => {

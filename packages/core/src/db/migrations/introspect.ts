@@ -1,9 +1,9 @@
-import type { VelnAdapter } from '../../adapter/types'
+import type { OakBunAdapter } from '../../adapter/types'
 import type { TableDiff, ColumnDef, IndexDef } from './types'
 
 // Internal table names to ignore during introspection
 const IGNORED_TABLES = new Set([
-  '_veln_migrations',
+  '_oakbun_migrations',
   'sqlite_sequence',
   'sqlite_stat1',
   'sqlite_master',
@@ -61,7 +61,7 @@ interface MySQLIndex {
   NON_UNIQUE:   number
 }
 
-async function introspectSQLite(adapter: VelnAdapter): Promise<Map<string, TableDiff>> {
+async function introspectSQLite(adapter: OakBunAdapter): Promise<Map<string, TableDiff>> {
   const tables = await adapter.query<{ name: string }>(
     `SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`,
   )
@@ -110,7 +110,7 @@ async function introspectSQLite(adapter: VelnAdapter): Promise<Map<string, Table
   return result
 }
 
-async function introspectPostgres(adapter: VelnAdapter, tableName?: string): Promise<Map<string, TableDiff>> {
+async function introspectPostgres(adapter: OakBunAdapter, tableName?: string): Promise<Map<string, TableDiff>> {
   const tableFilter = tableName ? `AND t.table_name = '${tableName}'` : ''
 
   const columns = await adapter.query<InformationSchemaColumn>(`
@@ -200,7 +200,7 @@ async function introspectPostgres(adapter: VelnAdapter, tableName?: string): Pro
   return tableMap
 }
 
-async function introspectMySQL(adapter: VelnAdapter): Promise<Map<string, TableDiff>> {
+async function introspectMySQL(adapter: OakBunAdapter): Promise<Map<string, TableDiff>> {
   const dbRow = await adapter.query<{ database: string }>(`SELECT DATABASE() AS \`database\``)
   const dbName = dbRow[0]?.database ?? ''
 
@@ -276,7 +276,7 @@ async function introspectMySQL(adapter: VelnAdapter): Promise<Map<string, TableD
  * Detect adapter type and introspect the current DB schema.
  * Returns a map of table name → TableDiff.
  */
-export async function introspectSchema(adapter: VelnAdapter): Promise<Map<string, TableDiff>> {
+export async function introspectSchema(adapter: OakBunAdapter): Promise<Map<string, TableDiff>> {
   // Probe: if sqlite_master exists → SQLite
   try {
     await adapter.query(`SELECT 1 FROM sqlite_master LIMIT 1`)

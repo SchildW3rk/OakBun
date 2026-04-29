@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 import { SQLiteAdapter }    from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor }     from '../../packages/core/src/hooks/executor'
-import { VelnDB }           from '../../packages/core/src/db/index'
+import { OakBunDB }           from '../../packages/core/src/db/index'
 import type { QueryLog }    from '../../packages/core/src/db/index'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import type { WithRelations } from '../../packages/core/src/schema/table'
@@ -63,7 +63,7 @@ async function makeDB() {
   await adapter.execute(`INSERT INTO "comments" ("body", "postId") VALUES (?, ?)`, ['C3', 2])
 
   const hooks = new HookExecutor()
-  const db = new VelnDB(adapter, hooks)
+  const db = new OakBunDB(adapter, hooks)
   return db.withCtx({})
 }
 
@@ -92,8 +92,8 @@ describe('eager loading — .with()', () => {
 
       const log = makeQueryLog()
       const hooks = new HookExecutor()
-      const veln = new VelnDB(adapter, hooks)
-      const db = veln.withCtx({}, undefined, log)
+      const oakbun = new OakBunDB(adapter, hooks)
+      const db = oakbun.withCtx({}, undefined, log)
 
       await db.from(postsTable).with({ author: true }).select()
 
@@ -109,7 +109,7 @@ describe('eager loading — .with()', () => {
       await adapter.execute(`INSERT INTO "posts" ("title", "authorId") VALUES (?, ?)`, ['Orphan', 999])
 
       const hooks = new HookExecutor()
-      const db = new VelnDB(adapter, hooks).withCtx({})
+      const db = new OakBunDB(adapter, hooks).withCtx({})
       const posts = await db.from(postsTable).with({ author: true }).select()
 
       expect(posts[0].author).toBeNull()
@@ -122,7 +122,7 @@ describe('eager loading — .with()', () => {
 
       const log = makeQueryLog()
       const hooks = new HookExecutor()
-      const db = new VelnDB(adapter, hooks).withCtx({}, undefined, log)
+      const db = new OakBunDB(adapter, hooks).withCtx({}, undefined, log)
 
       const posts = await db.from(postsTable).with({ author: true }).select()
       expect(posts).toHaveLength(0)
@@ -158,7 +158,7 @@ describe('eager loading — .with()', () => {
 
       const log = makeQueryLog()
       const hooks = new HookExecutor()
-      const db = new VelnDB(adapter, hooks).withCtx({}, undefined, log)
+      const db = new OakBunDB(adapter, hooks).withCtx({}, undefined, log)
 
       await db.from(postsTable).with({ comments: true }).select()
       expect(log.queries).toBe(2)
@@ -183,7 +183,7 @@ describe('eager loading — .with()', () => {
 
       const log = makeQueryLog()
       const hooks = new HookExecutor()
-      const db = new VelnDB(adapter, hooks).withCtx({}, undefined, log)
+      const db = new OakBunDB(adapter, hooks).withCtx({}, undefined, log)
 
       const posts = await db.from(postsTable).with({ comments: true }).select()
       expect(posts).toHaveLength(0)
@@ -212,7 +212,7 @@ describe('eager loading — .with()', () => {
       await adapter.execute(`INSERT INTO "comments" ("body", "postId") VALUES (?, ?)`, ['C1', 1])
 
       const hooks = new HookExecutor()
-      const db = new VelnDB(adapter, hooks).withCtx({}, undefined, log)
+      const db = new OakBunDB(adapter, hooks).withCtx({}, undefined, log)
 
       await db.from(postsTable).with({ author: true, comments: true }).select()
       // 1 main + 1 users IN + 1 comments IN
@@ -291,7 +291,7 @@ describe('eager loading — .with()', () => {
       await adapter.execute(`INSERT INTO "posts" ("title", "authorId") VALUES (?, ?)`, ['P', 1])
 
       const hooks = new HookExecutor()
-      const db = new VelnDB(adapter, hooks).withCtx({})
+      const db = new OakBunDB(adapter, hooks).withCtx({})
 
       // manyToMany: with() should throw at runtime (not at the .with() call)
       await expect(

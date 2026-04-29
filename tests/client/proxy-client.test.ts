@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { createApp } from '../../packages/core/src/app/index'
 import { defineModule } from '../../packages/core/src/app/module'
 import { createProxyClient, createModuleClient, pathToClientKey } from '../../packages/core/src/client/proxy'
-import { VelnClientError } from '../../packages/core/src/client/error'
+import { OakBunClientError } from '../../packages/core/src/client/error'
 import { NotFoundError, ConflictError } from '../../packages/core/src/errors/index'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
@@ -108,7 +108,7 @@ describe('createProxyClient — happy path CRUD', () => {
 // ── 3. Result pattern — unhappy path ─────────────────────────────────────────
 
 describe('createProxyClient — result pattern (ok: false)', () => {
-  test('404 VelnError → { ok: false, status: 404, code, message }', async () => {
+  test('404 OakBunError → { ok: false, status: 404, code, message }', async () => {
     const mod = defineModule('/users')
       .get('/:id', (ctx) => {
         throw new NotFoundError(`User with id ${ctx.params.id} not found`, 'USER_NOT_FOUND')
@@ -124,7 +124,7 @@ describe('createProxyClient — result pattern (ok: false)', () => {
       expect(result.status).toBe(404)
       expect(result.code).toBe('USER_NOT_FOUND')
       expect(result.message).toContain('User with id 99')
-      expect(result.error).toBeInstanceOf(VelnClientError)
+      expect(result.error).toBeInstanceOf(OakBunClientError)
     }
   })
 
@@ -148,7 +148,7 @@ describe('createProxyClient — result pattern (ok: false)', () => {
 // ── 4. throws: true option ────────────────────────────────────────────────────
 
 describe('createProxyClient — throws: true', () => {
-  test('404 → throws VelnClientError with status + code', async () => {
+  test('404 → throws OakBunClientError with status + code', async () => {
     const mod = defineModule('/users')
       .get('/:id', () => { throw new NotFoundError('not found', 'USER_NOT_FOUND') })
       .build()
@@ -159,11 +159,11 @@ describe('createProxyClient — throws: true', () => {
       throws: true,
     })
 
-    let caught: VelnClientError | null = null
+    let caught: OakBunClientError | null = null
     try {
       await client.users.show(99)
     } catch (err) {
-      if (err instanceof VelnClientError) caught = err
+      if (err instanceof OakBunClientError) caught = err
     }
     expect(caught).not.toBeNull()
     expect(caught!.status).toBe(404)

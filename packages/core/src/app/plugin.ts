@@ -1,9 +1,9 @@
 import type { BaseCtx, Logger, BaseOptions, Guard } from './types'
-import type { VelnAdapter } from '../adapter/types'
+import type { OakBunAdapter } from '../adapter/types'
 import type { HookExecutor } from '../hooks/executor'
 import type { EventBus } from '../events/index'
-import type { BoundVelnDB } from '../db/index'
-import type { VelnModule } from './module'
+import type { BoundOakBunDB } from '../db/index'
+import type { OakBunModule } from './module'
 import { createMinimalLogger } from './logger'
 import { type AdapterConfig, resolveAdapter as resolveAdapterConfig } from '../adapter/resolve'
 
@@ -28,9 +28,9 @@ export interface NavItem {
 // IMPORTANT: the factory is called at plugin-build time with a dummy empty
 // object. The factory's argument is NEVER used for actual request handling —
 // it exists only to let TypeScript infer the correct ctx type for the modules
-// returned. The resulting VelnModule[] is extracted once and stored as a plain
+// returned. The resulting OakBunModule[] is extracted once and stored as a plain
 // array, identical to the non-factory case.
-export type ModulesInput<TCtx> = VelnModule[] | ((ctx: TCtx) => VelnModule[])
+export type ModulesInput<TCtx> = OakBunModule[] | ((ctx: TCtx) => OakBunModule[])
 
 export interface Plugin<TCtx, TAdd extends object> {
   name: string
@@ -50,7 +50,7 @@ export interface Plugin<TCtx, TAdd extends object> {
    * The factory is called once with a dummy ctx to extract the module list —
    * it is NEVER called at request time.
    */
-  modules?: VelnModule[]
+  modules?: OakBunModule[]
   /**
    * Optional permission gate for all routes contributed via .modules().
    * app.plugin() checks ctx.user before running plugin.request() for those routes.
@@ -82,7 +82,7 @@ export interface Plugin<TCtx, TAdd extends object> {
 export class PluginBuilder<TAdd extends object> {
   private _options:     BaseOptions  = {}
   private _requires:    string[]     = []
-  private _modules:     VelnModule[] = []
+  private _modules:     OakBunModule[] = []
   private _permissions: string[]     = []
   private _nav:         NavItem[]    = []
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,9 +107,9 @@ export class PluginBuilder<TAdd extends object> {
   // The factory receives a typed ctx so TypeScript can infer the correct ctx
   // type for handlers defined inside the returned modules. This is a pure
   // compile-time feature — the factory is called ONCE here (at plugin-build
-  // time) with a dummy empty object to extract the VelnModule[]. The dummy
+  // time) with a dummy empty object to extract the OakBunModule[]. The dummy
   // argument is NEVER used for actual request handling and carries no real data.
-  // The result is stored as a plain VelnModule[], identical to the array form.
+  // The result is stored as a plain OakBunModule[], identical to the array form.
   modules(input: ModulesInput<BaseCtx & TAdd>): this {
     if (typeof input === 'function') {
       // Call factory with a dummy ctx to extract the module array.
@@ -275,7 +275,7 @@ export function eventBusPlugin(bus?: EventBus): Plugin<any, { events: EventBus }
 
 // ── DbPluginConfig — declarative adapter creation ─────────────────────────────
 
-export type DbPluginConfig = AdapterConfig | VelnAdapter
+export type DbPluginConfig = AdapterConfig | OakBunAdapter
 
 export interface DbLogOptions {
   /** Whether query logging is enabled. Default: false. */
@@ -288,7 +288,7 @@ export interface DbLogOptions {
   onQuery?: (entry: import('../adapter/types').QueryLogEntry) => void
 }
 
-// dbPlugin — adds ctx.db as a BoundVelnDB scoped to the request ctx.
+// dbPlugin — adds ctx.db as a BoundOakBunDB scoped to the request ctx.
 // The HookExecutor is NOT created here — it is received from the app via install(hooks).
 // This ensures module hook registrations (app.register()) and DB operations share the same executor.
 // IMPORTANT: register AFTER eventBusPlugin/loggerPlugin — withCtx(ctx) snapshots the full
@@ -296,23 +296,23 @@ export interface DbLogOptions {
 export function dbPlugin<TCtx extends BaseCtx>(
   config: DbPluginConfig,
   log?: DbLogOptions,
-): Plugin<TCtx, { db: BoundVelnDB }> {
+): Plugin<TCtx, { db: BoundOakBunDB }> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { VelnDB } = require('../db/index') as typeof import('../db/index')
-  let velnDB: InstanceType<typeof import('../db/index').VelnDB> | null = null
+  const { OakBunDB } = require('../db/index') as typeof import('../db/index')
+  let oakBunDB: InstanceType<typeof import('../db/index').OakBunDB> | null = null
 
   // Build a global onQuery handler if logging is enabled.
   // This is set once on the adapter and called for every query across all requests.
-  // For per-request handling (slow query logging, query counters), see BoundVelnDB.
+  // For per-request handling (slow query logging, query counters), see BoundOakBunDB.
   let globalOnQuery: ((entry: import('../adapter/types').QueryLogEntry) => void) | undefined
   if (log?.enabled) {
     const slowMs  = log.slowQueryMs
     const level   = log.level ?? 'debug'
     const custom  = log.onQuery
     globalOnQuery = (entry) => {
-      const prefix = `[veln:db] ${entry.type} (${entry.durationMs.toFixed(2)}ms)`
+      const prefix = `[oakbun:db] ${entry.type} (${entry.durationMs.toFixed(2)}ms)`
       if (slowMs !== undefined && entry.durationMs >= slowMs) {
-        console.warn(`[veln:db] SLOW QUERY (${entry.durationMs.toFixed(2)}ms): ${entry.sql}`)
+        console.warn(`[oakbun:db] SLOW QUERY (${entry.durationMs.toFixed(2)}ms): ${entry.sql}`)
       } else {
         if (level === 'info')  console.log(`${prefix} ${entry.sql}`)
         else if (level === 'warn') console.warn(`${prefix} ${entry.sql}`)
@@ -331,17 +331,17 @@ export function dbPlugin<TCtx extends BaseCtx>(
       const adapter = resolveAdapterConfig(config)
       if (globalOnQuery) adapter.onQuery = globalOnQuery
       hooks.setAdapter(adapter)
-      velnDB = new VelnDB(adapter, hooks)
+      oakBunDB = new OakBunDB(adapter, hooks)
     },
     request: (ctx) => {
-      if (!velnDB) throw new Error('[veln] dbPlugin not installed — call app.plugin(dbPlugin(...)) before fetch()')
+      if (!oakBunDB) throw new Error('[oakbun] dbPlugin not installed — call app.plugin(dbPlugin(...)) before fetch()')
       // Read the per-request QueryLog injected by fetch() via ctx._queryLog.
       // When N+1 detection is enabled, fetch() creates a QueryLog and attaches it
       // to the base ctx before plugins run. dbPlugin reads it here and passes it
-      // to BoundVelnDB so each query increments the log's counters.
+      // to BoundOakBunDB so each query increments the log's counters.
       const queryLog = (ctx as unknown as Record<string, unknown>)['_queryLog'] as
         import('../db/index').QueryLog | undefined
-      return { ...ctx, db: velnDB.withCtx(ctx, ctx._requestQueue, queryLog) }
+      return { ...ctx, db: oakBunDB.withCtx(ctx, ctx._requestQueue, queryLog) }
     },
   }
 }

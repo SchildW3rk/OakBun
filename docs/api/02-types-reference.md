@@ -201,9 +201,9 @@ interface BaseCtx {
   stream:  (writer: (ctrl: StreamController) => void | Promise<void>, opts?: StreamOptions) => Response
   sse:     (writer: (ctrl: SseController) => void | Promise<void>) => Response
   cookie:  CookieJar
-  emit:    <K extends keyof VelnEvents>(event: K, payload: VelnEvents[K]) => void
+  emit:    <K extends keyof OakBunEvents>(event: K, payload: OakBunEvents[K]) => void
   logger?: Logger
-  db?:     BoundVelnDB
+  db?:     BoundOakBunDB
   events?: EventBus
 }
 ```
@@ -319,12 +319,12 @@ type EventHandler = (payload: unknown) => void | Promise<void>
 
 The built event handler definition returned by `defineEventHandler(...).build()`.
 
-### VelnEvents
+### OakBunEvents
 
 Merged global event registry. Extended by table `.emits()` declarations via module augmentation.
 
 ```ts
-interface VelnEvents {
+interface OakBunEvents {
   [key: string]: unknown
 }
 ```
@@ -333,7 +333,7 @@ interface VelnEvents {
 
 ## Module Types
 
-### VelnModule
+### OakBunModule
 
 The fully built module object returned by `defineModule(...).build()`.
 
@@ -363,7 +363,7 @@ Context available inside cron job handlers.
 
 ```ts
 interface CronCtx {
-  db:      BoundVelnDB
+  db:      BoundOakBunDB
   logger?: Logger
   [key: string]: unknown   // injected services
 }
@@ -395,15 +395,15 @@ The default `NoOpCronLockAdapter` always returns `true` from `acquire` — suita
 
 ## Adapter Types
 
-### VelnAdapter
+### OakBunAdapter
 
 The database adapter interface. Implement to support a new database backend.
 
 ```ts
-interface VelnAdapter {
+interface OakBunAdapter {
   execute(sql: string, params?: BindingValue[]): Promise<ExecuteResult>
   query<T>(sql: string, params?: BindingValue[]): Promise<T[]>
-  transaction<T>(fn: (tx: VelnAdapter) => Promise<T>): Promise<T>
+  transaction<T>(fn: (tx: OakBunAdapter) => Promise<T>): Promise<T>
   close(): Promise<void>
 }
 ```
@@ -447,11 +447,11 @@ interface ResourceOptions {
 
 ## Error Classes
 
-All error classes extend `VelnError` and map to HTTP status codes.
+All error classes extend `OakBunError` and map to HTTP status codes.
 
 | Class | Status | Usage |
 |---|---|---|
-| `VelnError` | — | Base class; extend for custom errors |
+| `OakBunError` | — | Base class; extend for custom errors |
 | `BadRequestError` | 400 | Invalid input |
 | `UnauthorizedError` | 401 | Missing/invalid credentials |
 | `ForbiddenError` | 403 | Insufficient permissions |

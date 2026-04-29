@@ -10,7 +10,7 @@ describe('generateOpenApiSpec — basic', () => {
     const app = createApp()
     const spec = app.getOpenApiSpec()
     expect(spec.openapi).toBe('3.1.0')
-    expect(spec.info.title).toBe('Veln API')
+    expect(spec.info.title).toBe('OakBun API')
     expect(spec.info.version).toBe('1.0.0')
     expect(spec.paths).toEqual({})
   })

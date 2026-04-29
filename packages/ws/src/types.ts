@@ -1,6 +1,5 @@
 import type { ZodTypeAny } from 'zod'
-import type { AuthPayload } from 'oakbun'
-import type { BoundVelnDB } from '../../core/src/db/index'
+import type { AuthPayload, BoundOakBunDB } from 'oakbun'
 
 // ── WsCtx ─────────────────────────────────────────────────────────────────────
 //
@@ -27,7 +26,7 @@ export interface WsCtx<TData = unknown> {
   /** Set by jwtPlugin when registered on the app. undefined otherwise. */
   user?:  AuthPayload
   /** Set by dbPlugin when registered on the app. undefined otherwise. */
-  db?:    BoundVelnDB
+  db?:    BoundOakBunDB
 }
 
 // Internal data stored on each ws.data — carries full context from upgrade phase
@@ -36,7 +35,7 @@ export interface WsCtxData {
   params:   Record<string, string>
   query:    Record<string, string | string[]>
   user?:    AuthPayload
-  db?:      BoundVelnDB
+  db?:      BoundOakBunDB
   // Extra fields passed from plugin-extended ctx
   [key: string]: unknown
   // Typed message — populated during message dispatch

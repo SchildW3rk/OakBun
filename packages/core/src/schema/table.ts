@@ -71,10 +71,10 @@ export interface TableEventMap {
 // STAGING NOTE (Phase 3 → Phase 4):
 // This type is fully computed here at the Table level. However, app.on() currently
 // accepts `event: string` because TypeScript cannot recover these generic types after
-// they pass through VelnModule (which erases them). In Phase 4, the RPC client and
+// they pass through OakBunModule (which erases them). In Phase 4, the RPC client and
 // a dedicated app.onEvent<T>() overload will use InferTableEvents directly at the
 // call site, without needing Declaration Merging. Until then, Declaration Merging
-// via `interface VelnEvents {}` is the opt-in escape hatch for typed subscribers.
+// via `interface OakBunEvents {}` is the opt-in escape hatch for typed subscribers.
 //
 // Implementation note: three separate mapped types are intersected instead of using
 // a conditional `K extends 'afterUpdate'` inside a single mapped type. The conditional

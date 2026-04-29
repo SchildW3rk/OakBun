@@ -15,7 +15,7 @@ Plugins extend `ctx`, bundle modules, declare permissions, and participate in th
 interface Plugin<TCtx, TAdd extends Record<string, unknown>> {
   name:         string
   requires?:    string[]            // plugin names that must be registered first
-  modules?:     VelnModule[]        // bundled modules
+  modules?:     OakBunModule[]        // bundled modules
   permissions?: string[]            // declared permissions
   nav?:         NavItem[]           // server-driven nav items
   guards?:      Guard<any>[]        // plugin-level guards (protect all bundled modules)

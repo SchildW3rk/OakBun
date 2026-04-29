@@ -168,7 +168,7 @@ Inside the shell:
 ```
 
 The shell provides:
-- `db` — a `BoundVelnDB` connected to your database
+- `db` — a `BoundOakBunDB` connected to your database
 - All imported tables and services from your schema path
 - Standard TypeScript/JavaScript evaluation
 
@@ -191,7 +191,7 @@ export default defineCommand('seed')
   .description('Seed the database')
   .option('--email <email>', 'Admin email', 'admin@example.com')
   .action(async (args, ctx) => {
-    // ctx.db — BoundVelnDB from the adapter in oak.config.ts
+    // ctx.db — BoundOakBunDB from the adapter in oak.config.ts
     const existing = await ctx.db.from(usersTable)
       .where({ email: args.email })
       .first()
@@ -233,7 +233,7 @@ defineCommand(name: string)
   .action(fn: (args: Record<string, string>, ctx: CommandContext) => Promise<void> | void)
 ```
 
-`ctx.db` is a `BoundVelnDB` scoped to the adapter from `oak.config.ts`. `ctx.adapter` gives access to the raw adapter for executing plain SQL.
+`ctx.db` is a `BoundOakBunDB` scoped to the adapter from `oak.config.ts`. `ctx.adapter` gives access to the raw adapter for executing plain SQL.
 
 The `flag` format follows `--flag-name <value>` for required values or `--flag-name` for boolean flags.
 

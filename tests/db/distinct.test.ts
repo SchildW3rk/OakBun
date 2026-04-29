@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test'
 import { SQLiteAdapter }    from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor }     from '../../packages/core/src/hooks/executor'
-import { VelnDB }           from '../../packages/core/src/db/index'
+import { OakBunDB }           from '../../packages/core/src/db/index'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import { column }           from '../../packages/core/src/schema/column'
 import { buildSelect }      from '../../packages/core/src/db/sql'
@@ -32,7 +32,7 @@ async function makeDB() {
   await adapter.execute(`INSERT INTO "users" ("name", "role", "deletedAt") VALUES (?, ?, ?)`, ['Carol', 'user', '2024-01-01T00:00:00.000Z'])
 
   const hooks = new HookExecutor()
-  return new VelnDB(adapter, hooks).withCtx({})
+  return new OakBunDB(adapter, hooks).withCtx({})
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

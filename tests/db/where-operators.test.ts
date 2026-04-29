@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 import { SQLiteAdapter }    from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor }     from '../../packages/core/src/hooks/executor'
-import { VelnDB }           from '../../packages/core/src/db/index'
+import { OakBunDB }           from '../../packages/core/src/db/index'
 import { buildWhere, buildSelect } from '../../packages/core/src/db/sql'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import { column }           from '../../packages/core/src/schema/column'
@@ -23,12 +23,12 @@ type User = InferRow<typeof usersTable.schema>
 
 function setup() {
   const adapter = new SQLiteAdapter()
-  const db      = new VelnDB(adapter, new HookExecutor())
+  const db      = new OakBunDB(adapter, new HookExecutor())
   const bound   = db.withCtx({})
   return { adapter, bound }
 }
 
-async function seed(adapter: SQLiteAdapter, bound: ReturnType<VelnDB['withCtx']>) {
+async function seed(adapter: SQLiteAdapter, bound: ReturnType<OakBunDB['withCtx']>) {
   await adapter.execute(toCreateTableSql(usersTable))
   await bound.into(usersTable).insert({ name: 'Alice',   role: 'admin', score: 90, email: 'alice@example.com' })
   await bound.into(usersTable).insert({ name: 'Bob',     role: 'user',  score: 50, email: 'bob@example.com' })
@@ -204,7 +204,7 @@ describe('buildWhere — OR / AND groups', () => {
 // ── Part 2: SelectBuilder — integration tests ─────────────────────────────
 
 describe('SelectBuilder — operator WHERE conditions', () => {
-  let bound: ReturnType<VelnDB['withCtx']>
+  let bound: ReturnType<OakBunDB['withCtx']>
   let adapter: SQLiteAdapter
 
   beforeEach(async () => {
@@ -317,7 +317,7 @@ describe('SelectBuilder — operator WHERE conditions', () => {
 // ── Part 3: Multiple .where() calls → AND ─────────────────────────────────
 
 describe('SelectBuilder — multiple .where() calls → AND', () => {
-  let bound: ReturnType<VelnDB['withCtx']>
+  let bound: ReturnType<OakBunDB['withCtx']>
   let adapter: SQLiteAdapter
 
   beforeEach(async () => {
@@ -358,7 +358,7 @@ describe('SelectBuilder — multiple .where() calls → AND', () => {
 // ── Part 4: .whereRaw() ────────────────────────────────────────────────────
 
 describe('SelectBuilder — .whereRaw()', () => {
-  let bound: ReturnType<VelnDB['withCtx']>
+  let bound: ReturnType<OakBunDB['withCtx']>
   let adapter: SQLiteAdapter
 
   beforeEach(async () => {

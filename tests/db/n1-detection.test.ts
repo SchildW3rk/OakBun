@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, mock, spyOn } from 'bun:test'
 import { SQLiteAdapter }    from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor }     from '../../packages/core/src/hooks/executor'
-import { VelnDB }           from '../../packages/core/src/db/index'
+import { OakBunDB }           from '../../packages/core/src/db/index'
 import type { QueryLog }    from '../../packages/core/src/db/index'
 import { createApp }        from '../../packages/core/src/app/index'
 import { dbPlugin }         from '../../packages/core/src/app/plugin'
@@ -34,12 +34,12 @@ async function seedItems(adapter: SQLiteAdapter) {
 
 // ── Part 1: QueryLog unit tests ─────────────────────────────────────────────
 
-describe('QueryLog — unit level via BoundVelnDB', () => {
+describe('QueryLog — unit level via BoundOakBunDB', () => {
   test('queries below threshold — no warning conditions', async () => {
     const adapter = makeAdapter()
     await adapter.execute(toCreateTableSql(itemsTable))
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
     const log = makeQueryLog({ threshold: 10 })
     const bound = db.withCtx({}, undefined, log)
 
@@ -56,7 +56,7 @@ describe('QueryLog — unit level via BoundVelnDB', () => {
     const adapter = makeAdapter()
     await adapter.execute(toCreateTableSql(itemsTable))
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
     const log = makeQueryLog({ threshold: 10 })
     const bound = db.withCtx({}, undefined, log)
 
@@ -73,7 +73,7 @@ describe('QueryLog — unit level via BoundVelnDB', () => {
     const adapter = makeAdapter()
     await adapter.execute(toCreateTableSql(itemsTable))
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
     const log = makeQueryLog({ threshold: 3 })
     const bound = db.withCtx({}, undefined, log)
 
@@ -89,7 +89,7 @@ describe('QueryLog — unit level via BoundVelnDB', () => {
     const adapter = makeAdapter()
     await adapter.execute(toCreateTableSql(itemsTable))
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
     const log = makeQueryLog({ threshold: 2, logQueries: true })
     const bound = db.withCtx({}, undefined, log)
 
@@ -110,7 +110,7 @@ describe('QueryLog — unit level via BoundVelnDB', () => {
     const adapter = makeAdapter()
     await adapter.execute(toCreateTableSql(itemsTable))
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
     const log = makeQueryLog({ threshold: 2, logQueries: false })
     const bound = db.withCtx({}, undefined, log)
 
@@ -126,7 +126,7 @@ describe('QueryLog — unit level via BoundVelnDB', () => {
     const adapter = makeAdapter()
     await adapter.execute(toCreateTableSql(itemsTable))
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
     const log = makeQueryLog()
     const bound = db.withCtx({}, undefined, log)
 
@@ -137,11 +137,11 @@ describe('QueryLog — unit level via BoundVelnDB', () => {
     expect(isFinite(log.totalMs)).toBe(true)
   })
 
-  test('QueryLog resets per BoundVelnDB instance (per request)', async () => {
+  test('QueryLog resets per BoundOakBunDB instance (per request)', async () => {
     const adapter = makeAdapter()
     await adapter.execute(toCreateTableSql(itemsTable))
 
-    const db = new VelnDB(adapter, new HookExecutor())
+    const db = new OakBunDB(adapter, new HookExecutor())
 
     // Simulate request 1
     const log1 = makeQueryLog()

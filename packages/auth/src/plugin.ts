@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth'
-import type { VelnAdapter, BaseCtx, Plugin } from 'oakbun'
-import { createVelnDbAdapter } from './adapter.js'
+import type { OakBunAdapter, BaseCtx, Plugin } from 'oakbun'
+import { createOakBunDbAdapter } from './adapter.js'
 
 export interface BetterAuthPluginOptions {
   secret: string
@@ -23,13 +23,13 @@ export interface AuthCtxAdd {
 
 export function betterAuthPlugin(
   options: BetterAuthPluginOptions,
-  velnAdapter: VelnAdapter,
+  oakBunAdapter: OakBunAdapter,
 ): Plugin<BaseCtx, AuthCtxAdd> {
   const auth = betterAuth({
     secret: options.secret,
     baseURL: options.baseUrl ?? 'http://localhost',
     trustedOrigins: options.trustedOrigins,
-    database: createVelnDbAdapter(velnAdapter),
+    database: createOakBunDbAdapter(oakBunAdapter),
     emailAndPassword: {
       enabled: true,
     },

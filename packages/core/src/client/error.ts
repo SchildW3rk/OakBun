@@ -1,6 +1,6 @@
 import type { ZodIssue } from 'zod'
 
-export class VelnClientError extends Error {
+export class OakBunClientError extends Error {
   constructor(
     readonly status:  number,
     readonly code:    string,
@@ -8,6 +8,6 @@ export class VelnClientError extends Error {
     readonly issues?: ZodIssue[],
   ) {
     super(message)
-    this.name = 'VelnClientError'
+    this.name = 'OakBunClientError'
   }
 }

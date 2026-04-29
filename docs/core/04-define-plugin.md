@@ -162,7 +162,7 @@ The `Plugin<TCtx, TAdd>` interface (for manual construction):
 interface Plugin<TCtx, TAdd> {
   name:         string
   requires?:    string[]
-  modules?:     VelnModule[]
+  modules?:     OakBunModule[]
   permissions?: string[]
   nav?:         NavItem[]
   guards?:      Guard<any>[]   // plugin-level guards

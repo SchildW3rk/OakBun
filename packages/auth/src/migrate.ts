@@ -1,6 +1,6 @@
-import type { VelnAdapter } from 'oakbun'
+import type { OakBunAdapter } from 'oakbun'
 
-export async function createAuthTables(adapter: VelnAdapter): Promise<void> {
+export async function createAuthTables(adapter: OakBunAdapter): Promise<void> {
   await adapter.execute(`
     CREATE TABLE IF NOT EXISTS "user" (
       "id" TEXT PRIMARY KEY,

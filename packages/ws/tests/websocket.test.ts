@@ -6,7 +6,7 @@ import { createWsAdapter } from '../src/index'
 import '../src/module-augment'  // side-effect: enables defineModule().ws()
 import { z } from 'zod'
 
-const SECRET = 'ws-test-secret-for-veln-ok!!!!!!'
+const SECRET = 'ws-test-secret-for-oakbun-ok!!!!!!'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -66,7 +66,7 @@ describe('ws() — route registration', () => {
     expect(ws.getRoute('/chat')).toBeDefined()
   })
 
-  test.skip('module .ws() registers route with prefix via register()', () => {
+  test('module .ws() registers route with prefix via register()', () => {
     const app = createApp()
     const ws = createWsAdapter()
     app.registerWsAdapter(ws)
@@ -74,6 +74,19 @@ describe('ws() — route registration', () => {
       .ws('/chat', { open(ctx) { ctx.ws.send('hi') } })
       .build()
     app.register(mod)
+    expect(ws.getRoute('/api/chat')).toBeDefined()
+  })
+
+  test('module .ws() is registered when adapter is attached after module registration', () => {
+    const app = createApp()
+    const mod = defineModule('/api')
+      .ws('/chat', { open(ctx) { ctx.ws.send('hi') } })
+      .build()
+    app.register(mod)
+
+    const ws = createWsAdapter()
+    app.registerWsAdapter(ws)
+
     expect(ws.getRoute('/api/chat')).toBeDefined()
   })
 
@@ -335,7 +348,7 @@ describe('ws() — jwtPlugin integration', () => {
 
 // ── 5. Module-scoped WS ───────────────────────────────────────────────────────
 
-describe.skip('ws() — module-scoped', () => {
+describe('ws() — module-scoped', () => {
   let port: number
   let server: ReturnType<typeof Bun.serve>
 

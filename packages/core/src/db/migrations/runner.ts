@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { VelnAdapter } from '../../adapter/types'
+import type { OakBunAdapter } from '../../adapter/types'
 import type { MigrationResult, MigrationStatus, MigratorOptions } from './types'
 import { ensureTable, getApplied, markApplied, markRolledBack } from './tracker'
 
@@ -108,8 +108,8 @@ export function splitSqlStatements(sql: string): string[] {
   return statements
 }
 
-export async function run(adapter: VelnAdapter, opts: MigratorOptions): Promise<MigrationResult[]> {
-  const tableName = opts.tableName ?? '_veln_migrations'
+export async function run(adapter: OakBunAdapter, opts: MigratorOptions): Promise<MigrationResult[]> {
+  const tableName = opts.tableName ?? '_oakbun_migrations'
 
   await ensureTable(adapter, tableName)
 
@@ -142,8 +142,8 @@ export async function run(adapter: VelnAdapter, opts: MigratorOptions): Promise<
   return results
 }
 
-export async function status(adapter: VelnAdapter, opts: MigratorOptions): Promise<MigrationStatus[]> {
-  const tableName = opts.tableName ?? '_veln_migrations'
+export async function status(adapter: OakBunAdapter, opts: MigratorOptions): Promise<MigrationStatus[]> {
+  const tableName = opts.tableName ?? '_oakbun_migrations'
 
   await ensureTable(adapter, tableName)
 
@@ -160,8 +160,8 @@ export async function status(adapter: VelnAdapter, opts: MigratorOptions): Promi
   })
 }
 
-export async function rollback(adapter: VelnAdapter, opts: MigratorOptions): Promise<void> {
-  const tableName = opts.tableName ?? '_veln_migrations'
+export async function rollback(adapter: OakBunAdapter, opts: MigratorOptions): Promise<void> {
+  const tableName = opts.tableName ?? '_oakbun_migrations'
 
   await ensureTable(adapter, tableName)
 

@@ -13,15 +13,15 @@ Three foundational plugins included in the `oakbun` core package.
 
 ## dbPlugin
 
-Attaches `ctx.db` (a `BoundVelnDB`) to every request.
+Attaches `ctx.db` (a `BoundOakBunDB`) to every request.
 
 ### Signature
 
 ```ts
 function dbPlugin(
-  config: AdapterConfig | VelnAdapter,
+  config: AdapterConfig | OakBunAdapter,
   log?:   DbLogOptions,
-): Plugin<BaseCtx, { db: BoundVelnDB }>
+): Plugin<BaseCtx, { db: BoundOakBunDB }>
 ```
 
 ### Basic Example
@@ -75,7 +75,7 @@ Attaches `ctx.logger` to every request.
 ### Signature
 
 ```ts
-function loggerPlugin(options?: LoggerOptions): Plugin<BaseCtx, { logger: VelnLogger }>
+function loggerPlugin(options?: LoggerOptions): Plugin<BaseCtx, { logger: OakBunLogger }>
 ```
 
 ### Example
@@ -91,10 +91,10 @@ ctx.logger.warn('Slow query', { ms: 450 })
 ctx.logger.error('Unexpected error', { err })
 ```
 
-### VelnLogger Interface
+### OakBunLogger Interface
 
 ```ts
-interface VelnLogger {
+interface OakBunLogger {
   debug(msg: string, data?: Record<string, unknown>): void
   info(msg: string, data?: Record<string, unknown>): void
   warn(msg: string, data?: Record<string, unknown>): void

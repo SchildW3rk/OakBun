@@ -1,11 +1,11 @@
 import { describe, test, expect } from 'bun:test'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor } from '../../packages/core/src/hooks/executor'
-import { VelnDB, BoundVelnDB } from '../../packages/core/src/db/index'
+import { OakBunDB, BoundOakBunDB } from '../../packages/core/src/db/index'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import type { InferRow } from '../../packages/core/src/schema/table'
 import { column } from '../../packages/core/src/schema/column'
-import type { VelnAdapter } from '../../packages/core/src/adapter/types'
+import type { OakBunAdapter } from '../../packages/core/src/adapter/types'
 
 // ── Test schema ────────────────────────────────────────────────────────────
 
@@ -22,12 +22,12 @@ type User = InferRow<typeof usersTable.schema>
 function createSetup() {
   const adapter = new SQLiteAdapter()
   const exec    = new HookExecutor()
-  const db      = new VelnDB(adapter, exec)
+  const db      = new OakBunDB(adapter, exec)
   const bound   = db.withCtx({})
   return { adapter, exec, db, bound }
 }
 
-async function seedUsers(bound: BoundVelnDB, adapter: SQLiteAdapter): Promise<User[]> {
+async function seedUsers(bound: BoundOakBunDB, adapter: SQLiteAdapter): Promise<User[]> {
   await adapter.execute(toCreateTableSql(usersTable))
   return Promise.all([
     bound.into(usersTable).insert({ name: 'Alice', role: 'user' }),
@@ -87,7 +87,7 @@ describe('updateMany — happy path', () => {
     await sqliteAdapter.execute(toCreateTableSql(usersTable))
 
     let transactionCallCount = 0
-    const wrappedAdapter: VelnAdapter = {
+    const wrappedAdapter: OakBunAdapter = {
       query:   (sql, params) => sqliteAdapter.query(sql, params),
       execute: (sql, params) => sqliteAdapter.execute(sql, params),
       transaction: async (fn) => {
@@ -98,11 +98,11 @@ describe('updateMany — happy path', () => {
     }
 
     const exec  = new HookExecutor()
-    const bound = new BoundVelnDB(wrappedAdapter, exec, {})
+    const bound = new BoundOakBunDB(wrappedAdapter, exec, {})
 
     // Seed via the real adapter (outside the wrapped one)
     const exec2 = new HookExecutor()
-    const realBound = new BoundVelnDB(sqliteAdapter, exec2, {})
+    const realBound = new BoundOakBunDB(sqliteAdapter, exec2, {})
     const [alice, bob, carol] = await Promise.all([
       realBound.into(usersTable).insert({ name: 'Alice', role: 'user' }),
       realBound.into(usersTable).insert({ name: 'Bob',   role: 'user' }),
@@ -169,7 +169,7 @@ describe('updateMany — unhappy path', () => {
     await sqliteAdapter.execute(toCreateTableSql(usersTable))
 
     const exec  = new HookExecutor()
-    const bound = new BoundVelnDB(sqliteAdapter, exec, {})
+    const bound = new BoundOakBunDB(sqliteAdapter, exec, {})
     const [alice, bob, carol] = await Promise.all([
       bound.into(usersTable).insert({ name: 'Alice', role: 'user' }),
       bound.into(usersTable).insert({ name: 'Bob',   role: 'user' }),

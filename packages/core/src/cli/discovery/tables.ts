@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 import type { TableDef } from '../../schema/table'
 import type { SchemaMap } from '../../schema/table'
-import type { VelnConfig } from '../config/types'
+import type { OakBunConfig } from '../config/types'
 import { TABLE_SCAN_PATHS } from '../config/defaults'
 
 function isTableDef(x: unknown): x is TableDef<unknown, SchemaMap> {
@@ -14,7 +14,7 @@ function isTableDef(x: unknown): x is TableDef<unknown, SchemaMap> {
   )
 }
 
-function resolveScanPaths(config: VelnConfig): string[] {
+function resolveScanPaths(config: OakBunConfig): string[] {
   // Return absolute paths resolved from process.cwd() so import() finds the
   // user's project files regardless of where the CLI source file lives.
   const cwd      = process.cwd()
@@ -51,7 +51,7 @@ async function scanDir(absDir: string, pattern: string): Promise<TableDef<unknow
   return tables
 }
 
-export async function discoverTables(config: VelnConfig): Promise<TableDef<unknown, SchemaMap>[]> {
+export async function discoverTables(config: OakBunConfig): Promise<TableDef<unknown, SchemaMap>[]> {
   const scanPaths = resolveScanPaths(config)
 
   for (const scanPath of scanPaths) {

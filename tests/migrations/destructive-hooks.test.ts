@@ -9,7 +9,7 @@ import { generateMigration } from '../../packages/core/src/db/migrations/generat
 import { createMigrator }  from '../../packages/core/src/db/migrations/index'
 
 async function makeTempDir(): Promise<string> {
-  return mkdtemp(join(tmpdir(), 'veln-destr-'))
+  return mkdtemp(join(tmpdir(), 'oakbun-destr-'))
 }
 
 async function cleanDir(dir: string) {

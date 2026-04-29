@@ -4,7 +4,7 @@ import { z }               from 'zod'
 import { requireAuth }     from '../guards/auth.guard'
 import { PostService }     from '../services/post.service'
 
-const SECRET = process.env.JWT_SECRET ?? 'veln-example-secret'
+const SECRET = process.env.JWT_SECRET ?? 'oakbun-example-secret'
 
 const postSchema = z.object({
   id:        z.number(),

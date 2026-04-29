@@ -2,7 +2,7 @@ import type { BindingValue } from '../adapter/types'
 import type { TableDef, SchemaMap } from '../schema/table'
 import { sqlColName } from '../schema/table'
 import type { Column } from '../schema/column'
-import { VelnError } from '../errors/index'
+import { OakBunError } from '../errors/index'
 
 // ── SubqueryResult ────────────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ export interface JoinClause {
 // ── validateAndQuoteOnClause ──────────────────────────────────────────────────
 // Validates and quotes a JOIN ON clause to prevent SQL injection.
 // Only allows the format: word.word = word.word (table.column = table.column)
-// Throws VelnError(500, INVALID_JOIN_ON) for anything that doesn't match.
+// Throws OakBunError(500, INVALID_JOIN_ON) for anything that doesn't match.
 
 const ON_CLAUSE_PATTERN = /^([\w]+)\.([\w]+)\s*=\s*([\w]+)\.([\w]+)$/
 
@@ -58,7 +58,7 @@ export function validateAndQuoteOnClause(on: string): string {
   const trimmed = on.trim()
   const match = ON_CLAUSE_PATTERN.exec(trimmed)
   if (!match) {
-    throw new VelnError(
+    throw new OakBunError(
       `Invalid JOIN ON clause: "${on}". Must be in format "table.column = table.column"`,
       500,
       'INVALID_JOIN_ON',

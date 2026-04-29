@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 import { defineTable, column } from 'oakbun'
-import { VelnDB } from '../../packages/core/src/db/index'
+import { OakBunDB } from '../../packages/core/src/db/index'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor } from '../../packages/core/src/hooks/executor'
 
@@ -12,7 +12,7 @@ const invoicesTable = defineTable('invoices_issue13', {
 
 function makeDb() {
   const adapter = new SQLiteAdapter(':memory:')
-  const db = new VelnDB(adapter, new HookExecutor()).withCtx({} as any, undefined, undefined)
+  const db = new OakBunDB(adapter, new HookExecutor()).withCtx({} as any, undefined, undefined)
   return { adapter, db }
 }
 

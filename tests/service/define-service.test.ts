@@ -1,7 +1,7 @@
 import { describe, test, expect, spyOn } from 'bun:test'
 import { defineModel } from '../../packages/core/src/model/index'
 import { defineService, detectCircular, instantiateServices } from '../../packages/core/src/service/index'
-import { VelnDB, BoundVelnDB } from '../../packages/core/src/db/index'
+import { OakBunDB, BoundOakBunDB } from '../../packages/core/src/db/index'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor } from '../../packages/core/src/hooks/executor'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
@@ -18,10 +18,10 @@ const usersTable = defineTable('sv_users', {
   email: column.text(),
 }).build()
 
-function makeDb(): { adapter: SQLiteAdapter; db: VelnDB; bound: BoundVelnDB } {
+function makeDb(): { adapter: SQLiteAdapter; db: OakBunDB; bound: BoundOakBunDB } {
   const adapter = new SQLiteAdapter()
   const hooks   = new HookExecutor()
-  const db      = new VelnDB(adapter, hooks)
+  const db      = new OakBunDB(adapter, hooks)
   const bound   = db.withCtx({})
   return { adapter, db, bound }
 }

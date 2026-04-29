@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 import { SQLiteAdapter }    from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor }     from '../../packages/core/src/hooks/executor'
-import { VelnDB }           from '../../packages/core/src/db/index'
+import { OakBunDB }           from '../../packages/core/src/db/index'
 import type { QueryLog }    from '../../packages/core/src/db/index'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import { column }           from '../../packages/core/src/schema/column'
@@ -44,8 +44,8 @@ async function makeDB() {
   await adapter.execute(`INSERT INTO "posts" ("title") VALUES (?)`, ['Post 2'])
 
   const hooks = new HookExecutor()
-  const veln = new VelnDB(adapter, hooks)
-  return { adapter, db: veln.withCtx({}), veln }
+  const oakbun = new OakBunDB(adapter, hooks)
+  return { adapter, db: oakbun.withCtx({}), oakbun }
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 import { SQLiteAdapter }    from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor }     from '../../packages/core/src/hooks/executor'
-import { VelnDB }           from '../../packages/core/src/db/index'
+import { OakBunDB }           from '../../packages/core/src/db/index'
 import type { QueryLog }    from '../../packages/core/src/db/index'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import { column }           from '../../packages/core/src/schema/column'
@@ -52,13 +52,13 @@ async function makeDB() {
   await adapter.execute(`INSERT INTO "comments" ("body", "postId") VALUES (?, ?)`, ['C2', 1])
   await adapter.execute(`INSERT INTO "comments" ("body", "postId") VALUES (?, ?)`, ['C3', 2])
 
-  const db = new VelnDB(adapter, new HookExecutor())
+  const db = new OakBunDB(adapter, new HookExecutor())
   return { adapter, db }
 }
 
 // ── loadRelation tests ───────────────────────────────────────────────────────
 
-describe('BoundVelnDB.loadRelation()', () => {
+describe('BoundOakBunDB.loadRelation()', () => {
   test('returns all children grouped by FK — exactly 1 query', async () => {
     const { db } = await makeDB()
     const log = makeQueryLog()
@@ -165,7 +165,7 @@ describe('BoundVelnDB.loadRelation()', () => {
 
 // ── loadRelationOne tests ────────────────────────────────────────────────────
 
-describe('BoundVelnDB.loadRelationOne()', () => {
+describe('BoundOakBunDB.loadRelationOne()', () => {
   test('returns Map<fkValue, TChild> — single child per key', async () => {
     const { db } = await makeDB()
     const bound = db.withCtx({})

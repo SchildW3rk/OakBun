@@ -1,6 +1,6 @@
 import { describe, test, expect, spyOn } from 'bun:test'
 import { defineModel } from '../../packages/core/src/model/index'
-import { VelnDB, BoundVelnDB } from '../../packages/core/src/db/index'
+import { OakBunDB, BoundOakBunDB } from '../../packages/core/src/db/index'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor } from '../../packages/core/src/hooks/executor'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
@@ -11,10 +11,10 @@ const itemsTable = defineTable('mi_items', {
   name: column.text(),
 }).build()
 
-function makeDb(): { adapter: SQLiteAdapter; db: VelnDB } {
+function makeDb(): { adapter: SQLiteAdapter; db: OakBunDB } {
   const adapter = new SQLiteAdapter()
   const hooks   = new HookExecutor()
-  const db      = new VelnDB(adapter, hooks)
+  const db      = new OakBunDB(adapter, hooks)
   return { adapter, db }
 }
 
@@ -31,11 +31,11 @@ describe('defineModel — happy path', () => {
     expect(typeof ItemModel._factory).toBe('function')
   })
 
-  test('factory receives BoundVelnDB and returns model methods', async () => {
+  test('factory receives BoundOakBunDB and returns model methods', async () => {
     const { adapter, db } = makeDb()
     await adapter.execute(toCreateTableSql(itemsTable))
 
-    let capturedDb: BoundVelnDB | null = null
+    let capturedDb: BoundOakBunDB | null = null
     const ItemModel = defineModel('ItemModel', itemsTable, (boundDb) => {
       capturedDb = boundDb
       return {
@@ -62,7 +62,7 @@ describe('defineModel — happy path', () => {
     const inst  = ItemModel._factory(bound)
 
     expect(inst.db).toBe(bound)
-    expect(inst.db).toBeInstanceOf(BoundVelnDB)
+    expect(inst.db).toBeInstanceOf(BoundOakBunDB)
   })
 
   test('.db direct access: insert via model.db works', async () => {
@@ -82,7 +82,7 @@ describe('defineModel — happy path', () => {
     expect(rows[0]!.name).toBe('Widget')
   })
 
-  test('two requests get separate BoundVelnDB instances', () => {
+  test('two requests get separate BoundOakBunDB instances', () => {
     const { db } = makeDb()
 
     const ItemModel = defineModel('ItemModel', itemsTable, (boundDb) => ({

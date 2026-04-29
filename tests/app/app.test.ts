@@ -5,7 +5,7 @@ import { defineModule } from '../../packages/core/src/app/module'
 import { EventBus } from '../../packages/core/src/events/index'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 
-describe('Veln — routing', () => {
+describe('OakBun — routing', () => {
   test('GET /path — 200', async () => {
     const app = createApp()
     app.get('/hello', (ctx) => ctx.json({ ok: true }))
@@ -72,7 +72,7 @@ describe('Veln — routing', () => {
   })
 })
 
-describe('Veln — plugin chain', () => {
+describe('OakBun — plugin chain', () => {
   test('plugin.request() called per request', async () => {
     const app = createApp()
     let callCount = 0
@@ -134,7 +134,7 @@ describe('Veln — plugin chain', () => {
   })
 })
 
-describe('Veln — guards', () => {
+describe('OakBun — guards', () => {
   test('guard returns null → handler called', async () => {
     const app = createApp()
     let handlerCalled = false
@@ -169,7 +169,7 @@ describe('Veln — guards', () => {
   })
 })
 
-describe('Veln — error cascade', () => {
+describe('OakBun — error cascade', () => {
   test('handler throws → global onError called', async () => {
     const app = createApp()
     app.get('/throws', (_ctx) => { throw new Error('boom') })
@@ -201,7 +201,7 @@ describe('Veln — error cascade', () => {
   })
 })
 
-describe('Veln — events', () => {
+describe('OakBun — events', () => {
   test('app.on() subscriber fired after response', async () => {
     // app.on() delegates to app's internal EventBus
     const app = createApp()
@@ -250,7 +250,7 @@ describe('Veln — events', () => {
   })
 })
 
-describe('Veln — module registration', () => {
+describe('OakBun — module registration', () => {
   test('app.register(module) mounts routes with prefix', async () => {
     const app = createApp()
 
@@ -341,11 +341,11 @@ describe('Veln — module registration', () => {
     app.get('/orgs/:orgId/repos/:repoId', (ctx) =>
       ctx.json({ orgId: ctx.params.orgId, repoId: ctx.params.repoId }),
     )
-    const res = await app.fetch(new Request('http://localhost/orgs/acme/repos/veln'))
+    const res = await app.fetch(new Request('http://localhost/orgs/acme/repos/oakbun'))
     expect(res.status).toBe(200)
     const body = await res.json() as { orgId: string; repoId: string }
     expect(body.orgId).toBe('acme')
-    expect(body.repoId).toBe('veln')
+    expect(body.repoId).toBe('oakbun')
   })
 
   test('three-segment param route — all params correct', async () => {

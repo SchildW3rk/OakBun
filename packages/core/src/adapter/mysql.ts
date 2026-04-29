@@ -1,4 +1,4 @@
-import type { VelnAdapter, BindingValue, ExecuteResult, QueryLogEntry } from './types'
+import type { OakBunAdapter, BindingValue, ExecuteResult, QueryLogEntry } from './types'
 
 export interface MySQLConfig {
   url?: string
@@ -11,7 +11,7 @@ export interface MySQLConfig {
   idleTimeout?: number
 }
 
-export class MySQLAdapter implements VelnAdapter {
+export class MySQLAdapter implements OakBunAdapter {
   readonly dialect = 'mysql' as const
   // Typed as any: Bun.SQL's instance type is not reliably exported across
   // bun-types versions and the class is a Bun global — no stable import path.
@@ -52,9 +52,9 @@ export class MySQLAdapter implements VelnAdapter {
     return { rowsAffected }  // lastInsertId not available without explicit query
   }
 
-  async transaction<T>(fn: (tx: VelnAdapter) => Promise<T>): Promise<T> {
+  async transaction<T>(fn: (tx: OakBunAdapter) => Promise<T>): Promise<T> {
     return this.sql.begin(async (tx: any) => {
-      const txAdapter: VelnAdapter = {
+      const txAdapter: OakBunAdapter = {
         dialect:     'mysql',
         query:       (s, p = []) => tx.unsafe(s, p),
         execute:     async (s, p = []) => {

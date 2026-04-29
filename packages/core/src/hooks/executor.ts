@@ -1,4 +1,4 @@
-import type { VelnAdapter } from '../adapter/types'
+import type { OakBunAdapter } from '../adapter/types'
 import type { TableDef } from '../schema/table'
 import type { ModuleHookHandlers } from './types'
 import type { RequestEventQueue } from '../events/index'
@@ -21,16 +21,16 @@ export class HookExecutor {
 
   // Set by dbPlugin at install() — used by app.register() to build audit closures.
   // undefined until dbPlugin installs (no-DB apps never set this).
-  private _adapter?: VelnAdapter
+  private _adapter?: OakBunAdapter
 
   // No EventBus held globally — queue is passed per runAfterX call
   constructor() {}
 
-  setAdapter(adapter: VelnAdapter): void {
+  setAdapter(adapter: OakBunAdapter): void {
     this._adapter = adapter
   }
 
-  getAdapter(): VelnAdapter | undefined {
+  getAdapter(): OakBunAdapter | undefined {
     return this._adapter
   }
 

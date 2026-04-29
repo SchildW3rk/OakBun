@@ -1,5 +1,5 @@
 // ── JWT Payload ────────────────────────────────────────────────────────────────
-// Re-exports AuthPayload from veln core under the JWT-specific name.
+// Re-exports AuthPayload from oakbun core under the JWT-specific name.
 
 export interface JwtPayload {
   /** Subject — typically user ID */

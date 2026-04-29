@@ -37,16 +37,16 @@ export class RequestEventQueue {
   }
 }
 
-// VelnEvents — opt-in Declaration Merging escape hatch.
+// OakBunEvents — opt-in Declaration Merging escape hatch.
 //
 // STAGING NOTE (Phase 3 → Phase 4):
 // app.on() currently accepts `event: string` because module registration erases
 // the Table's generic types. InferTableEvents<T, M> is already fully defined in
 // schema/table.ts — Phase 4 will wire it into app.on() via a typed overload that
 // accepts Table references directly, making this Declaration Merging unnecessary
-// for Table-derived events. Use VelnEvents only for events without a Table source
+// for Table-derived events. Use OakBunEvents only for events without a Table source
 // (e.g. 'app.started', 'request.error').
-export interface VelnEvents {}
+export interface OakBunEvents {}
 
 export type EventBusErrorHandler = (event: string, error: unknown) => void
 
@@ -80,10 +80,10 @@ export class InMemoryEventBus {
       ((event, err) => console.error(`[EventBus] Error in handler for "${event}":`, err))
   }
 
-  // Typed overload for events declared via VelnEvents Declaration Merging
-  on<K extends keyof VelnEvents>(
+  // Typed overload for events declared via OakBunEvents Declaration Merging
+  on<K extends keyof OakBunEvents>(
     event: K,
-    handler: (payload: VelnEvents[K], ctx: unknown) => Promise<void> | void,
+    handler: (payload: OakBunEvents[K], ctx: unknown) => Promise<void> | void,
   ): this
   // String fallback — Phase 4 will add a Table-reference overload here that uses
   // InferTableEvents<T, M> directly, making Declaration Merging unnecessary for

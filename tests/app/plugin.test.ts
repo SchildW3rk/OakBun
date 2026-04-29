@@ -3,7 +3,7 @@ import { loggerPlugin, eventBusPlugin, dbPlugin } from '../../packages/core/src/
 import { EventBus } from '../../packages/core/src/events/index'
 import { HookExecutor } from '../../packages/core/src/hooks/executor'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
-import { BoundVelnDB } from '../../packages/core/src/db/index'
+import { BoundOakBunDB } from '../../packages/core/src/db/index'
 import type { BaseCtx } from '../../packages/core/src/app/types'
 
 function makeBaseCtx(overrides: Partial<BaseCtx> = {}): BaseCtx {
@@ -64,13 +64,13 @@ describe('eventBusPlugin', () => {
 })
 
 describe('dbPlugin', () => {
-  test('adds ctx.db as BoundVelnDB', () => {
+  test('adds ctx.db as BoundOakBunDB', () => {
     const adapter = new SQLiteAdapter()
     const plugin = dbPlugin(adapter)
     plugin.install!(new HookExecutor())
     const ctx = makeBaseCtx()
     const result = plugin.request(ctx) as any
-    expect(result.db).toBeInstanceOf(BoundVelnDB)
+    expect(result.db).toBeInstanceOf(BoundOakBunDB)
   })
 
   test('ctx.db is scoped to the request ctx (withCtx called with full ctx)', () => {
@@ -85,7 +85,7 @@ describe('dbPlugin', () => {
     ctx = eventPlugin.request(ctx)
 
     const result = plugin.request(ctx) as any
-    expect(result.db).toBeInstanceOf(BoundVelnDB)
+    expect(result.db).toBeInstanceOf(BoundOakBunDB)
     // The db is scoped — ctx.events should still be on the enriched ctx
     expect(result.events).toBe(bus)
   })
@@ -121,8 +121,8 @@ describe('Plugin ordering', () => {
     ctx = eventBusPlugin(bus).request(ctx)
     ctx = db.request(ctx)
 
-    // ctx.db is BoundVelnDB, and ctx.events is available
-    expect(ctx.db).toBeInstanceOf(BoundVelnDB)
+    // ctx.db is BoundOakBunDB, and ctx.events is available
+    expect(ctx.db).toBeInstanceOf(BoundOakBunDB)
     expect(ctx.events).toBe(bus)
   })
 })
@@ -130,7 +130,7 @@ describe('Plugin ordering', () => {
 // ── Plugin dependency validation (requires) ───────────────────────────────────
 
 import { createApp } from '../../packages/core/src/app/index'
-import { VelnError } from '../../packages/core/src/errors/index'
+import { OakBunError } from '../../packages/core/src/errors/index'
 
 describe('plugin — requires dependency validation', () => {
   function makePlugin(name: string, requires?: string[]) {
@@ -159,11 +159,11 @@ describe('plugin — requires dependency validation', () => {
 
   test('plugin with unsatisfied requires — throws PLUGIN_MISSING_DEP', () => {
     const app = createApp()
-    let caught: VelnError | null = null
+    let caught: OakBunError | null = null
     try {
       app.plugin(makePlugin('beta', ['alpha']))
     } catch (e) {
-      caught = e as VelnError
+      caught = e as OakBunError
     }
     expect(caught).not.toBeNull()
     expect(caught?.code).toBe('PLUGIN_MISSING_DEP')
@@ -171,11 +171,11 @@ describe('plugin — requires dependency validation', () => {
 
   test('PLUGIN_MISSING_DEP error message names both plugins', () => {
     const app = createApp()
-    let caught: VelnError | null = null
+    let caught: OakBunError | null = null
     try {
       app.plugin(makePlugin('myPlugin', ['missingDep']))
     } catch (e) {
-      caught = e as VelnError
+      caught = e as OakBunError
     }
     expect(caught?.message).toContain('myPlugin')
     expect(caught?.message).toContain('missingDep')
@@ -192,6 +192,6 @@ describe('plugin — requires dependency validation', () => {
     const app = createApp()
     app.plugin(makePlugin('a'))
     // 'b' is missing
-    expect(() => app.plugin(makePlugin('c', ['a', 'b']))).toThrow(VelnError)
+    expect(() => app.plugin(makePlugin('c', ['a', 'b']))).toThrow(OakBunError)
   })
 })

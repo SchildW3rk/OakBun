@@ -19,7 +19,7 @@ export async function importVerifyKey(config: JwtConfig): Promise<JoseKey | Uint
   return importSPKI(config.publicKey, 'RS256')
 }
 
-// ── jose error → @veln/jwt error mapping ──────────────────────────────────────
+// ── jose error → @oakbun/jwt error mapping ──────────────────────────────────────
 
 function mapJoseError(err: unknown): never {
   if (err instanceof joseErrors.JWTExpired) {

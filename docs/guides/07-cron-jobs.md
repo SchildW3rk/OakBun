@@ -117,7 +117,7 @@ In-progress job handlers complete before shutdown.
 
 ```ts
 interface CronCtx {
-  db:      BoundVelnDB
+  db:      BoundOakBunDB
   logger?: Logger
   [key: string]: unknown   // injected services
 }

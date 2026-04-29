@@ -3,7 +3,7 @@ import { createApp } from '../../core/src/app/index'
 import { defineModule } from '../../core/src/app/module'
 import { jwtPlugin, signJwt, TokenExpiredError, InvalidTokenError, WeakSecretError } from '../src/index'
 
-const SECRET = 'test-secret-key-for-veln-jwt-ok!'  // 32 chars
+const SECRET = 'test-secret-key-for-oakbun-jwt-ok!'  // 32 chars
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 

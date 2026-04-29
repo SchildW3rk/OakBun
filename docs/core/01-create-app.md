@@ -7,12 +7,12 @@ related: ["defineModule", "definePlugin", "defineMiddleware"]
 
 # createApp
 
-Creates and returns a `Veln` application instance. The app manages plugin registration, route mounting, and the HTTP server lifecycle.
+Creates and returns a `OakBun` application instance. The app manages plugin registration, route mounting, and the HTTP server lifecycle.
 
 ## Signature
 
 ```ts
-function createApp(): Veln
+function createApp(): OakBun
 ```
 
 ## Basic Example

@@ -1,8 +1,8 @@
 import { createAdapterFactory } from 'better-auth/adapters'
-import type { VelnAdapter, BindingValue } from 'oakbun'
+import type { OakBunAdapter, BindingValue } from 'oakbun'
 import { convertWhere } from './where.js'
 
-// createVelnDbAdapter returns a DBAdapterInstance: (options) => DBAdapter
+// createOakBunDbAdapter returns a DBAdapterInstance: (options) => DBAdapter
 // which is what betterAuth({ database: ... }) expects.
 //
 // We use createAdapterFactory which handles:
@@ -13,13 +13,13 @@ import { convertWhere } from './where.js'
 // - Transform input/output pipeline
 //
 // Our CustomAdapter only needs to do raw SQL.
-export function createVelnDbAdapter(velnAdapter: VelnAdapter) {
+export function createOakBunDbAdapter(oakBunAdapter: OakBunAdapter) {
   let factoryRef: ReturnType<typeof createAdapterFactory> | null = null
 
   const adapterFactory = createAdapterFactory({
     config: {
-      adapterId: 'veln-sqlite',
-      adapterName: 'Veln SQLite Adapter',
+      adapterId: 'oakbun-sqlite',
+      adapterName: 'OakBun SQLite Adapter',
       usePlural: false,
       supportsBooleans: false,  // we store 0/1
       supportsDates: false,     // we store ISO strings
@@ -27,9 +27,9 @@ export function createVelnDbAdapter(velnAdapter: VelnAdapter) {
       supportsArrays: false,
       transaction: async (cb) => {
         // transaction is called by better-auth with a callback that accepts a DBTransactionAdapter.
-        // We run inside velnAdapter.transaction and pass cb a new adapter backed by the tx.
-        return velnAdapter.transaction((tx) => {
-          if (!factoryRef) throw new Error('[veln-auth] adapter factory not initialized')
+        // We run inside oakBunAdapter.transaction and pass cb a new adapter backed by the tx.
+        return oakBunAdapter.transaction((tx) => {
+          if (!factoryRef) throw new Error('[oakbun-auth] adapter factory not initialized')
           // Safe cast: createAdapterFactory returns a factory that matches the expected type
           const txAdapter = factoryRef({}) as unknown as Parameters<typeof cb>[0]
           return cb(txAdapter)
@@ -48,7 +48,7 @@ export function createVelnDbAdapter(velnAdapter: VelnAdapter) {
         const cols = fields.map((f) => `"${f}"`).join(', ')
         const placeholders = fields.map(() => '?').join(', ')
 
-        await velnAdapter.execute(
+        await oakBunAdapter.execute(
           `INSERT INTO "${tableName}" (${cols}) VALUES (${placeholders})`,
           values,
         )
@@ -57,7 +57,7 @@ export function createVelnDbAdapter(velnAdapter: VelnAdapter) {
         const idVal = (data as Record<string, unknown>)['id']
         if (idVal !== undefined) {
           const selectCols = buildSelectCols(select)
-          const rows = await velnAdapter.query<Record<string, unknown>>(
+          const rows = await oakBunAdapter.query<Record<string, unknown>>(
             `SELECT ${selectCols} FROM "${tableName}" WHERE "id" = ? LIMIT 1`,
             [toBindingParam(idVal)],
           )
@@ -75,7 +75,7 @@ export function createVelnDbAdapter(velnAdapter: VelnAdapter) {
         const { sql: whereSql, params } = convertWhere(where)
         const selectCols = buildSelectCols(select)
         const whereClause = whereSql ? `WHERE ${whereSql}` : ''
-        const rows = await velnAdapter.query<Record<string, unknown>>(
+        const rows = await oakBunAdapter.query<Record<string, unknown>>(
           `SELECT ${selectCols} FROM "${tableName}" ${whereClause} LIMIT 1`,
           params,
         )
@@ -108,7 +108,7 @@ export function createVelnDbAdapter(velnAdapter: VelnAdapter) {
         ]
           .filter(Boolean)
           .join(' ')
-        return velnAdapter.query<T>(sql, params)
+        return oakBunAdapter.query<T>(sql, params)
       },
 
       count: async ({ model, where }: {
@@ -118,7 +118,7 @@ export function createVelnDbAdapter(velnAdapter: VelnAdapter) {
         const tableName = getModelName(model)
         const { sql: whereSql, params } = convertWhere(where ?? [])
         const whereClause = whereSql ? `WHERE ${whereSql}` : ''
-        const rows = await velnAdapter.query<{ count: number }>(
+        const rows = await oakBunAdapter.query<{ count: number }>(
           `SELECT COUNT(*) as count FROM "${tableName}" ${whereClause}`,
           params,
         )
@@ -138,11 +138,11 @@ export function createVelnDbAdapter(velnAdapter: VelnAdapter) {
         if (fields.length === 0) return null
         const setCols = fields.map((f) => `"${f}" = ?`).join(', ')
         const setValues = Object.values(updateObj).map(toBindingParam)
-        await velnAdapter.execute(
+        await oakBunAdapter.execute(
           `UPDATE "${tableName}" SET ${setCols} WHERE ${whereSql}`,
           [...setValues, ...whereParams],
         )
-        const rows = await velnAdapter.query<Record<string, unknown>>(
+        const rows = await oakBunAdapter.query<Record<string, unknown>>(
           `SELECT * FROM "${tableName}" WHERE ${whereSql} LIMIT 1`,
           whereParams,
         )
@@ -161,7 +161,7 @@ export function createVelnDbAdapter(velnAdapter: VelnAdapter) {
         if (fields.length === 0) return 0
         const setCols = fields.map((f) => `"${f}" = ?`).join(', ')
         const setValues = Object.values(update).map(toBindingParam)
-        const result = await velnAdapter.execute(
+        const result = await oakBunAdapter.execute(
           `UPDATE "${tableName}" SET ${setCols} WHERE ${whereSql}`,
           [...setValues, ...whereParams],
         )
@@ -175,7 +175,7 @@ export function createVelnDbAdapter(velnAdapter: VelnAdapter) {
         const tableName = getModelName(model)
         const { sql: whereSql, params } = convertWhere(where)
         if (!whereSql) return
-        await velnAdapter.execute(`DELETE FROM "${tableName}" WHERE ${whereSql}`, params)
+        await oakBunAdapter.execute(`DELETE FROM "${tableName}" WHERE ${whereSql}`, params)
       },
 
       deleteMany: async ({ model, where }: {
@@ -185,7 +185,7 @@ export function createVelnDbAdapter(velnAdapter: VelnAdapter) {
         const tableName = getModelName(model)
         const { sql: whereSql, params } = convertWhere(where)
         if (!whereSql) return 0
-        const result = await velnAdapter.execute(
+        const result = await oakBunAdapter.execute(
           `DELETE FROM "${tableName}" WHERE ${whereSql}`,
           params,
         )

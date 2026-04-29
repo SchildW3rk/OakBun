@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test'
 import { MySQLAdapter } from '../../packages/core/src/adapter/mysql'
 import type { MySQLConfig } from '../../packages/core/src/adapter/mysql'
-import type { VelnAdapter } from '../../packages/core/src/adapter/types'
+import type { OakBunAdapter } from '../../packages/core/src/adapter/types'
 
 // ── Compile-time + instantiation tests (no real DB needed) ────────────────
 
@@ -31,7 +31,7 @@ describe('MySQLAdapter — instantiation', () => {
     expect(() => new MySQLAdapter(config)).not.toThrow()
   })
 
-  test('implements VelnAdapter interface (duck-type)', () => {
+  test('implements OakBunAdapter interface (duck-type)', () => {
     const adapter = new MySQLAdapter({ url: 'mysql://root:secret@localhost:3306/test' })
     expect(typeof adapter.query).toBe('function')
     expect(typeof adapter.execute).toBe('function')
@@ -39,9 +39,9 @@ describe('MySQLAdapter — instantiation', () => {
     expect(typeof adapter.close).toBe('function')
   })
 
-  test('is assignable to VelnAdapter', () => {
+  test('is assignable to OakBunAdapter', () => {
     // Compile-time check — if this type-checks, the interface is satisfied.
-    const adapter: VelnAdapter = new MySQLAdapter({ url: 'mysql://localhost/test' })
+    const adapter: OakBunAdapter = new MySQLAdapter({ url: 'mysql://localhost/test' })
     expect(adapter).toBeDefined()
   })
 })

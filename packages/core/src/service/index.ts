@@ -1,4 +1,4 @@
-import type { BoundVelnDB } from '../db/index'
+import type { BoundOakBunDB } from '../db/index'
 import type { ModelDef, ModelInstance } from '../model/index'
 import type { BaseOptions } from '../app/types'
 import { createMinimalLogger } from '../app/logger'
@@ -120,7 +120,7 @@ export function detectCircular(services: ReadonlyArray<ServiceDef<string, unknow
     if (s === 2) return
     if (s === 1) {
       const cycle = [...stack, key].join(' → ')
-      throw new Error(`[veln] Circular dependency detected: ${cycle}`)
+      throw new Error(`[oakbun] Circular dependency detected: ${cycle}`)
     }
     state.set(key, 1)
     const svc = byKey.get(key)
@@ -144,7 +144,7 @@ export function detectCircular(services: ReadonlyArray<ServiceDef<string, unknow
 // Returns a Record<key, instance> to be merged into ctx.
 export function instantiateServices(
   services: ReadonlyArray<ServiceDef<string, unknown>>,
-  db: BoundVelnDB,
+  db: BoundOakBunDB,
 ): Record<string, unknown> {
   // Cache within this request — each dep key instantiated at most once
   const cache = new Map<string, unknown>()
@@ -172,7 +172,7 @@ export function instantiateServices(
       cache.set(key, inst)
       return inst
     }
-    throw new Error(`[veln] Unknown dependency type in service '${ownerKey}'`)
+    throw new Error(`[oakbun] Unknown dependency type in service '${ownerKey}'`)
   }
 
   const result: Record<string, unknown> = {}

@@ -1,19 +1,19 @@
-import type { BaseCtx, Guard, ErrorHandler, RouteHandler, Route, RouteSchema, RouteHandlerWithSchema, InferCtx, RouteMap, OnRequestHook, OnBeforeHandleHook, OnResponseHook, RouteDocs, StreamController, StreamOptions, SseController, VelnWsAdapter, WsRouteShape, AuthAdapter } from './types'
+import type { BaseCtx, Guard, ErrorHandler, RouteHandler, Route, RouteSchema, RouteHandlerWithSchema, InferCtx, RouteMap, OnRequestHook, OnBeforeHandleHook, OnResponseHook, RouteDocs, StreamController, StreamOptions, SseController, OakBunWsAdapter, WsRouteShape, AuthAdapter } from './types'
 import type { NavItem } from './plugin'
 import { createMinimalLogger } from './logger'
 import { generateOpenApiSpec } from '../openapi/generator'
 import type { OpenApiSpec } from '../openapi/generator'
 import type { ZodTypeAny } from 'zod'
 import { ValidationError } from './types'
-import { VelnError, UnauthorizedError, ForbiddenError } from '../errors/index'
+import { OakBunError, UnauthorizedError, ForbiddenError } from '../errors/index'
 import type { Plugin } from './plugin'
-import type { VelnEvents, EventHandler } from '../events/index'
+import type { OakBunEvents, EventHandler } from '../events/index'
 import type { EventHandlerDef } from '../events/handler'
 import type { CronDef, CronLockAdapter } from '../cron/index'
 import { NoOpCronLockAdapter } from '../cron/index'
 import { createSystemCtx } from './system-ctx'
-import { VelnDB } from '../db/index'
-import type { VelnModule, ServiceDeclaration } from './module'
+import { OakBunDB } from '../db/index'
+import type { OakBunModule, ServiceDeclaration } from './module'
 import type { InferTableEvents, TableEventMap, TableDef, SchemaMap } from '../schema/table'
 import { InMemoryEventBus, RequestEventQueue } from '../events/index'
 import type { EventBusAdapter } from '../events/index'
@@ -150,7 +150,7 @@ function normalizeHandler<TCtx>(
   return { handler: handler as RouteHandler<TCtx>, schema: undefined, docs: undefined }
 }
 
-export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never, never>, TPrefixes extends string = never> {
+export class OakBun<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never, never>, TPrefixes extends string = never> {
   // Used for type-extraction only — never set or read at runtime
   declare readonly _routes:   TRoutes
   declare readonly _prefixes: TPrefixes
@@ -166,6 +166,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   // Exposed so users can pass it to dbPlugin — app.register() populates this executor
   readonly hooks: HookExecutor
   private installedPlugins = false
+  private installPromise: Promise<void> | null = null
   // Tracks which module plugin names have already been installed
   private readonly installedModulePlugins = new Set<string>()
   // Audit declarations collected from register() — wired after plugins install
@@ -178,6 +179,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   } = { validateResponse: false, exposeIssues: false }
   // Global service declarations — registered via app.use()
   private readonly _globalServiceDeclarations: ServiceDeclaration<string, unknown>[] = []
+  private readonly _modules: OakBunModule[] = []
   // Circular dep check happens once on first fetch
   private _serviceCircularChecked = false
   // Route-matching cache — keyed by "METHOD:pathname", stores match result or null (no match).
@@ -193,7 +195,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   private readonly _cronLock: CronLockAdapter
   private readonly _onInternalError: (msg: string, err: unknown) => void
   // Optional WS adapter — registered via app.registerWsAdapter(). Null when @oakbun/ws is not used.
-  private _wsAdapter: VelnWsAdapter | null = null
+  private _wsAdapter: OakBunWsAdapter | null = null
   // Optional auth adapter — set via createApp({ auth }). Null when auth is not configured.
   private _authAdapter: AuthAdapter | null = null
 
@@ -264,7 +266,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     method: HttpMethod,
     path: string,
     handler: HandlerArg<TCtx>,
-    module?: VelnModule,
+    module?: OakBunModule,
   ): this {
     const { handler: normalized, schema, docs } = normalizeHandler(handler)
     this.routes.push({
@@ -288,7 +290,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     path: string,
     schemaOrHandler: { body?: ZodTypeAny; params?: ZodTypeAny; query?: ZodTypeAny; response?: ZodTypeAny } | HandlerArg<TCtx>,
     handler?: (ctx: never) => Response | Promise<Response>,
-  ): Veln<TCtx, RouteMap, TPrefixes> {
+  ): OakBun<TCtx, RouteMap, TPrefixes> {
     return handler
       ? this._addRoute(method, path, { ...schemaOrHandler as RouteSchema, handler } as RouteHandlerWithSchema<TCtx, RouteSchema>)
       : this._addRoute(method, path, schemaOrHandler as HandlerArg<TCtx>)
@@ -304,9 +306,9 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     path: TPath,
     schema: { body?: TBody; params?: TParams; query?: TQuery; response?: TResponse },
     handler: (ctx: TCtx & { body: import('zod').infer<TBody>; params: import('zod').infer<TParams>; query: import('zod').infer<TQuery> }) => Response | Promise<Response>,
-  ): Veln<TCtx, TRoutes & Record<`GET ${TPath}`, { body: TBody; params: TParams; query: TQuery; response: TResponse }>>
+  ): OakBun<TCtx, TRoutes & Record<`GET ${TPath}`, { body: TBody; params: TParams; query: TQuery; response: TResponse }>>
   get(path: string, handler: HandlerArg<TCtx>): this
-  get(path: string, schemaOrHandler: { body?: ZodTypeAny; params?: ZodTypeAny; query?: ZodTypeAny; response?: ZodTypeAny } | HandlerArg<TCtx>, handler?: (ctx: never) => Response | Promise<Response>): Veln<TCtx, RouteMap, TPrefixes> {
+  get(path: string, schemaOrHandler: { body?: ZodTypeAny; params?: ZodTypeAny; query?: ZodTypeAny; response?: ZodTypeAny } | HandlerArg<TCtx>, handler?: (ctx: never) => Response | Promise<Response>): OakBun<TCtx, RouteMap, TPrefixes> {
     return this._registerMethod('GET', path, schemaOrHandler, handler)
   }
 
@@ -320,9 +322,9 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     path: TPath,
     schema: { body?: TBody; params?: TParams; query?: TQuery; response?: TResponse },
     handler: (ctx: TCtx & { body: import('zod').infer<TBody>; params: import('zod').infer<TParams>; query: import('zod').infer<TQuery> }) => Response | Promise<Response>,
-  ): Veln<TCtx, TRoutes & Record<`POST ${TPath}`, { body: TBody; params: TParams; query: TQuery; response: TResponse }>>
+  ): OakBun<TCtx, TRoutes & Record<`POST ${TPath}`, { body: TBody; params: TParams; query: TQuery; response: TResponse }>>
   post(path: string, handler: HandlerArg<TCtx>): this
-  post(path: string, schemaOrHandler: { body?: ZodTypeAny; params?: ZodTypeAny; query?: ZodTypeAny; response?: ZodTypeAny } | HandlerArg<TCtx>, handler?: (ctx: never) => Response | Promise<Response>): Veln<TCtx, RouteMap, TPrefixes> {
+  post(path: string, schemaOrHandler: { body?: ZodTypeAny; params?: ZodTypeAny; query?: ZodTypeAny; response?: ZodTypeAny } | HandlerArg<TCtx>, handler?: (ctx: never) => Response | Promise<Response>): OakBun<TCtx, RouteMap, TPrefixes> {
     return this._registerMethod('POST', path, schemaOrHandler, handler)
   }
 
@@ -336,9 +338,9 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     path: TPath,
     schema: { body?: TBody; params?: TParams; query?: TQuery; response?: TResponse },
     handler: (ctx: TCtx & { body: import('zod').infer<TBody>; params: import('zod').infer<TParams>; query: import('zod').infer<TQuery> }) => Response | Promise<Response>,
-  ): Veln<TCtx, TRoutes & Record<`PUT ${TPath}`, { body: TBody; params: TParams; query: TQuery; response: TResponse }>>
+  ): OakBun<TCtx, TRoutes & Record<`PUT ${TPath}`, { body: TBody; params: TParams; query: TQuery; response: TResponse }>>
   put(path: string, handler: HandlerArg<TCtx>): this
-  put(path: string, schemaOrHandler: { body?: ZodTypeAny; params?: ZodTypeAny; query?: ZodTypeAny; response?: ZodTypeAny } | HandlerArg<TCtx>, handler?: (ctx: never) => Response | Promise<Response>): Veln<TCtx, RouteMap, TPrefixes> {
+  put(path: string, schemaOrHandler: { body?: ZodTypeAny; params?: ZodTypeAny; query?: ZodTypeAny; response?: ZodTypeAny } | HandlerArg<TCtx>, handler?: (ctx: never) => Response | Promise<Response>): OakBun<TCtx, RouteMap, TPrefixes> {
     return this._registerMethod('PUT', path, schemaOrHandler, handler)
   }
 
@@ -352,9 +354,9 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     path: TPath,
     schema: { body?: TBody; params?: TParams; query?: TQuery; response?: TResponse },
     handler: (ctx: TCtx & { body: import('zod').infer<TBody>; params: import('zod').infer<TParams>; query: import('zod').infer<TQuery> }) => Response | Promise<Response>,
-  ): Veln<TCtx, TRoutes & Record<`PATCH ${TPath}`, { body: TBody; params: TParams; query: TQuery; response: TResponse }>>
+  ): OakBun<TCtx, TRoutes & Record<`PATCH ${TPath}`, { body: TBody; params: TParams; query: TQuery; response: TResponse }>>
   patch(path: string, handler: HandlerArg<TCtx>): this
-  patch(path: string, schemaOrHandler: { body?: ZodTypeAny; params?: ZodTypeAny; query?: ZodTypeAny; response?: ZodTypeAny } | HandlerArg<TCtx>, handler?: (ctx: never) => Response | Promise<Response>): Veln<TCtx, RouteMap, TPrefixes> {
+  patch(path: string, schemaOrHandler: { body?: ZodTypeAny; params?: ZodTypeAny; query?: ZodTypeAny; response?: ZodTypeAny } | HandlerArg<TCtx>, handler?: (ctx: never) => Response | Promise<Response>): OakBun<TCtx, RouteMap, TPrefixes> {
     return this._registerMethod('PATCH', path, schemaOrHandler, handler)
   }
 
@@ -368,9 +370,9 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     path: TPath,
     schema: { body?: TBody; params?: TParams; query?: TQuery; response?: TResponse },
     handler: (ctx: TCtx & { body: import('zod').infer<TBody>; params: import('zod').infer<TParams>; query: import('zod').infer<TQuery> }) => Response | Promise<Response>,
-  ): Veln<TCtx, TRoutes & Record<`DELETE ${TPath}`, { body: TBody; params: TParams; query: TQuery; response: TResponse }>>
+  ): OakBun<TCtx, TRoutes & Record<`DELETE ${TPath}`, { body: TBody; params: TParams; query: TQuery; response: TResponse }>>
   delete(path: string, handler: HandlerArg<TCtx>): this
-  delete(path: string, schemaOrHandler: { body?: ZodTypeAny; params?: ZodTypeAny; query?: ZodTypeAny; response?: ZodTypeAny } | HandlerArg<TCtx>, handler?: (ctx: never) => Response | Promise<Response>): Veln<TCtx, RouteMap, TPrefixes> {
+  delete(path: string, schemaOrHandler: { body?: ZodTypeAny; params?: ZodTypeAny; query?: ZodTypeAny; response?: ZodTypeAny } | HandlerArg<TCtx>, handler?: (ctx: never) => Response | Promise<Response>): OakBun<TCtx, RouteMap, TPrefixes> {
     return this._registerMethod('DELETE', path, schemaOrHandler, handler)
   }
 
@@ -381,8 +383,14 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
    *   import { createWsAdapter } from '@oakbun/ws'
    *   app.registerWsAdapter(createWsAdapter())
    */
-  registerWsAdapter(adapter: VelnWsAdapter): this {
+  registerWsAdapter(adapter: OakBunWsAdapter): this {
     this._wsAdapter = adapter
+    for (const module of this._modules) {
+      for (const wsRoute of module.wsRoutes) {
+        const fullPath = module.prefix + wsRoute.path
+        this._wsAdapter.registerRoute(fullPath, { ...wsRoute, path: fullPath, _module: module })
+      }
+    }
     return this
   }
 
@@ -396,7 +404,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
    */
   ws(path: string, route: WsRouteShape): this {
     if (!this._wsAdapter) {
-      throw new VelnError(
+      throw new OakBunError(
         `app.ws('${path}') called but no WS adapter is registered. Call app.registerWsAdapter(createWsAdapter()) first.`,
         500, 'NO_WS_ADAPTER',
       )
@@ -406,14 +414,14 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   }
 
 
-  plugin<TAdd extends object>(p: Plugin<TCtx, TAdd>): Veln<TCtx & TAdd, TRoutes, TPrefixes> {
+  plugin<TAdd extends object>(p: Plugin<TCtx, TAdd>): OakBun<TCtx & TAdd, TRoutes, TPrefixes> {
     // Validate declared dependencies — fail fast with a clear error rather than a
     // mysterious runtime crash when a required plugin's ctx additions are missing.
     if (p.requires && p.requires.length > 0) {
       const registered = new Set(this.plugins.map((r) => r.name))
       for (const dep of p.requires) {
         if (!registered.has(dep)) {
-          throw new VelnError(
+          throw new OakBunError(
             `Plugin "${p.name}" requires plugin "${dep}" to be registered first. ` +
             `Call app.plugin(${dep}Plugin(...)) before app.plugin(${p.name}Plugin(...)).`,
             500,
@@ -438,7 +446,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
         }
       }
     }
-    return this as unknown as Veln<TCtx & TAdd, TRoutes, TPrefixes>
+    return this as unknown as OakBun<TCtx & TAdd, TRoutes, TPrefixes>
   }
 
   // ── .use() — global service or middleware registration ────────────────────
@@ -446,14 +454,14 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   // Middleware overload: registers onRequest/onResponse hooks globally.
   use<TKey extends string, TDef>(
     service: ServiceDef<TKey, TDef>,
-  ): Veln<TCtx & Record<TKey, TDef>, TRoutes, TPrefixes>
+  ): OakBun<TCtx & Record<TKey, TDef>, TRoutes, TPrefixes>
   use(middleware: MiddlewareDef): this
   use<TKey extends string, TDef>(
     serviceOrMiddleware: ServiceDef<TKey, TDef> | MiddlewareDef,
-  ): Veln<TCtx & Record<TKey, TDef>, TRoutes, TPrefixes> | this {
+  ): OakBun<TCtx & Record<TKey, TDef>, TRoutes, TPrefixes> | this {
     if ('_serviceKey' in serviceOrMiddleware) {
       this._globalServiceDeclarations.push({ service: serviceOrMiddleware as ServiceDef<string, unknown> })
-      return this as unknown as Veln<TCtx & Record<TKey, TDef>, TRoutes, TPrefixes>
+      return this as unknown as OakBun<TCtx & Record<TKey, TDef>, TRoutes, TPrefixes>
     }
     // MiddlewareDef
     const m = serviceOrMiddleware as MiddlewareDef
@@ -463,10 +471,12 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   }
 
   register<TModuleRoutes extends RouteMap, TModulePrefix extends string>(
-    mod: VelnModule & { readonly _routes: TModuleRoutes; readonly _prefix: TModulePrefix },
-  ): Veln<TCtx, TRoutes & TModuleRoutes, TPrefixes | TModulePrefix>
-  register(module: VelnModule): this
-  register(module: VelnModule): Veln<TCtx, TRoutes & RouteMap, TPrefixes | string> {
+    mod: OakBunModule & { readonly _routes: TModuleRoutes; readonly _prefix: TModulePrefix },
+  ): OakBun<TCtx, TRoutes & TModuleRoutes, TPrefixes | TModulePrefix>
+  register(module: OakBunModule): this
+  register(module: OakBunModule): OakBun<TCtx, TRoutes & RouteMap, TPrefixes | string> {
+    this._modules.push(module)
+
     // 1. Transfer hook declarations to internal HookExecutor
     for (const decl of module.hookDeclarations) {
       this.hooks.registerModuleHook(decl.table.name, decl.handlers)
@@ -521,11 +531,11 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     // Invalidate route cache — new routes may match previously-cached paths differently
     this._routeCache.clear()
 
-    return this as unknown as Veln<TCtx, TRoutes & RouteMap, TPrefixes | string>
+    return this as unknown as OakBun<TCtx, TRoutes & RouteMap, TPrefixes | string>
   }
 
   // Internal helper: collect all service declarations (global + from a given module)
-  private _allServiceDecls(mod: VelnModule | null): ReadonlyArray<ServiceDeclaration<string, unknown>> {
+  private _allServiceDecls(mod: OakBunModule | null): ReadonlyArray<ServiceDeclaration<string, unknown>> {
     if (mod === null) return this._globalServiceDeclarations
     // Merge global + module, deduplicate by key (module overrides global)
     const seen = new Set<string>()
@@ -539,10 +549,10 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     return merged
   }
 
-  // Typed overload for events declared via VelnEvents Declaration Merging
-  on<K extends keyof VelnEvents>(
+  // Typed overload for events declared via OakBunEvents Declaration Merging
+  on<K extends keyof OakBunEvents>(
     event: K,
-    handler: (payload: VelnEvents[K], ctx: unknown) => Promise<void> | void,
+    handler: (payload: OakBunEvents[K], ctx: unknown) => Promise<void> | void,
   ): this
   // String fallback
   on(event: string, handler: EventHandler): this
@@ -583,8 +593,8 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
             const ctx: Record<string, unknown> = { logger }
             if (adapter) {
               const sysCtx = createSystemCtx({ role: 'event' })
-              const velnDb = new VelnDB(adapter, this.hooks)
-              const boundDb = velnDb.withCtx(sysCtx)
+              const oakBunDb = new OakBunDB(adapter, this.hooks)
+              const boundDb = oakBunDb.withCtx(sysCtx)
               const services = instantiateServices(def._services, boundDb)
               Object.assign(ctx, services)
             }
@@ -638,6 +648,106 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     return this
   }
 
+  private async _ensurePluginsInstalled(): Promise<void> {
+    if (this.installedPlugins) return
+    if (this.installPromise) return this.installPromise
+
+    this.installPromise = (async () => {
+      for (const plugin of this.plugins) {
+        if (plugin.install) {
+          await plugin.install(this.hooks)
+        }
+      }
+
+      // Wire pending audit declarations after plugin installation. dbPlugin.install()
+      // sets the adapter required by audit hook wiring.
+      if (this._pendingAuditDeclarations.length > 0) {
+        const adapter = this.hooks.getAdapter()
+        if (!adapter) {
+          throw new Error(
+            '[oakbun] .audit() declarations found but no dbPlugin is registered. ' +
+            'Call app.plugin(dbPlugin(...)) before app.register().'
+          )
+        }
+        for (const decl of this._pendingAuditDeclarations) {
+          const handlers = buildAuditHooks(decl, adapter)
+          this.hooks.registerModuleHook(decl.table.name, handlers)
+        }
+        this._pendingAuditDeclarations.length = 0
+      }
+
+      this.installedPlugins = true
+    })()
+
+    try {
+      await this.installPromise
+    } catch (err) {
+      this.installPromise = null
+      throw err
+    }
+  }
+
+  private async _createBaseCtx(req: Request, requestQueue: RequestEventQueue): Promise<BaseCtx> {
+    const url = new URL(req.url)
+
+    // Create per-request QueryLog when N+1 detection is enabled.
+    const dbLogCfg = this._opts.db?.log
+    const queryLog: import('../db/index').QueryLog | undefined = dbLogCfg?.enabled
+      ? {
+          queries:    0,
+          totalMs:    0,
+          entries:    [],
+          threshold:  dbLogCfg.n1Threshold ?? 10,
+          logQueries: dbLogCfg.logQueries ?? false,
+        }
+      : undefined
+
+    const baseCtx: BaseCtx = {
+      req,
+      params: {},
+      query: parseQuery(url.search),
+      json: <T>(data: T, status = 200) => Response.json(data, { status }),
+      text: (data: string, status = 200) => new Response(data, { status, headers: { 'Content-Type': 'text/plain' } }),
+      html: (data: string, status = 200) => new Response(data, { status, headers: { 'Content-Type': 'text/html' } }),
+      stream: makeStreamResponse,
+      sse:    makeSSEResponse,
+      cookie: createCookieJar(req),
+      emit: (event, payload) => { requestQueue.collect(event as string, payload) },
+      _requestQueue: requestQueue,
+      _queryLog: queryLog,
+    }
+
+    // Resolve auth once per request before hooks, plugins, guards, and handlers.
+    if (this._authAdapter) {
+      let resolvedUser: import('./types').AuthUser | null = null
+      try {
+        resolvedUser = await this._authAdapter.getUser(baseCtx)
+      } catch {
+        resolvedUser = null
+      }
+      Object.assign(baseCtx, { user: resolvedUser })
+    } else {
+      Object.assign(baseCtx, { user: null })
+    }
+
+    return baseCtx
+  }
+
+  private async _runGlobalOnRequest(baseCtx: BaseCtx, matchedRoute: Route<unknown> | null = null): Promise<Response | null> {
+    for (const hook of this._onRequestHooks) {
+      try {
+        const earlyRes = await hook._fn(baseCtx)
+        if (earlyRes instanceof Response) {
+          return this._runOnResponse(baseCtx, earlyRes, matchedRoute?._module ?? null)
+        }
+      } catch (err) {
+        const errRes = await this._handleError(err, baseCtx, matchedRoute ?? undefined)
+        return this._runOnResponse(baseCtx, errRes, matchedRoute?._module ?? null, undefined)
+      }
+    }
+    return null
+  }
+
   async fetch(req: Request, server?: import('bun').Server<unknown>): Promise<Response> {
     // ─────────────────────────────────────────────────────────────────────────
     // fetch() Lifecycle — strict phase order regardless of registration order:
@@ -656,31 +766,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     // ─────────────────────────────────────────────────────────────────────────
 
     // PHASE 1: Install plugins once (lazy, on first request)
-    if (!this.installedPlugins) {
-      this.installedPlugins = true
-      for (const plugin of this.plugins) {
-        if (plugin.install) {
-          await plugin.install(this.hooks)
-        }
-      }
-
-      // Wire pending audit declarations now that plugins are installed.
-      // dbPlugin.install() called hooks.setAdapter() above — adapter is available.
-      if (this._pendingAuditDeclarations.length > 0) {
-        const adapter = this.hooks.getAdapter()
-        if (!adapter) {
-          throw new Error(
-            '[veln] .audit() declarations found but no dbPlugin is registered. ' +
-            'Call app.plugin(dbPlugin(...)) before app.register().'
-          )
-        }
-        for (const decl of this._pendingAuditDeclarations) {
-          const handlers = buildAuditHooks(decl, adapter)
-          this.hooks.registerModuleHook(decl.table.name, handlers)
-        }
-        this._pendingAuditDeclarations.length = 0
-      }
-    }
+    await this._ensurePluginsInstalled()
 
     // Parse URL — pathname + query
     const url = new URL(req.url)
@@ -692,68 +778,13 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     // Guard blocks, handler errors, and plugin errors discard the queue (no flush).
     const requestQueue = new RequestEventQueue()
 
-    // Create per-request QueryLog when N+1 detection is enabled.
-    // Zero-cost when disabled — no object allocation, no wrapper.
-    const dbLogCfg = this._opts.db?.log
-    const queryLog: import('../db/index').QueryLog | undefined = dbLogCfg?.enabled
-      ? {
-          queries:    0,
-          totalMs:    0,
-          entries:    [],
-          threshold:  dbLogCfg.n1Threshold ?? 10,
-          logQueries: dbLogCfg.logQueries ?? false,
-        }
-      : undefined
-
-    // Build minimal base ctx for onRequest (plugins not yet applied)
-    // _requestQueue is read by dbPlugin to bind the queue to BoundVelnDB.
-    // _queryLog is read by dbPlugin to wire N+1 detection into BoundVelnDB.
-    const baseCtx: BaseCtx = {
-      req,
-      params: {},
-      query: parseQuery(url.search),
-      json: <T>(data: T, status = 200) => Response.json(data, { status }),
-      text: (data: string, status = 200) => new Response(data, { status, headers: { 'Content-Type': 'text/plain' } }),
-      html: (data: string, status = 200) => new Response(data, { status, headers: { 'Content-Type': 'text/html' } }),
-      stream: makeStreamResponse,
-      sse:    makeSSEResponse,
-      cookie: createCookieJar(req),
-      emit: (event, payload) => { requestQueue.collect(event as string, payload) },
-      _requestQueue: requestQueue,
-      _queryLog: queryLog,
-    }
-
-    // ── Auth: resolve user before onRequest ──────────────────────────────────
-    // getUser() runs once per request — result is available in onRequest hooks,
-    // plugins, guards, and handlers as ctx.user (AuthUser | null).
-    // Written via Object.assign so BaseCtx doesn't need to declare user — avoids
-    // type collision with jwtPlugin/betterAuthPlugin which set their own user shape.
-    if (this._authAdapter) {
-      let resolvedUser: import('./types').AuthUser | null = null
-      try {
-        resolvedUser = await this._authAdapter.getUser(baseCtx)
-      } catch {
-        resolvedUser = null
-      }
-      Object.assign(baseCtx, { user: resolvedUser })
-    } else {
-      Object.assign(baseCtx, { user: null })
-    }
+    const baseCtx = await this._createBaseCtx(req, requestQueue)
 
     // ── PHASE 1: onRequest — always runs ─────────────────────────────────────
     // Runs before route matching so ctx.params is empty here.
     // If a hook returns a Response, it is wrapped by onResponse (no module yet).
-    for (const hook of this._onRequestHooks) {
-      let earlyRes: Response | void
-      try {
-        earlyRes = await hook._fn(baseCtx)
-      } catch {
-        earlyRes = undefined
-      }
-      if (earlyRes instanceof Response) {
-        return this._runOnResponse(baseCtx, earlyRes, null)
-      }
-    }
+    const onRequestResult = await this._runGlobalOnRequest(baseCtx)
+    if (onRequestResult) return onRequestResult
 
     // ── WS UPGRADE: delegate to @oakbun/ws adapter ─────────────────────────────
     // Only attempted when the upgrade header is present, a server is available,
@@ -830,7 +861,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   }
 
   /**
-   * _runRoute — executes the full Veln pipeline for an already-matched route.
+   * _runRoute — executes the full OakBun pipeline for an already-matched route.
    *
    * Called from two places:
    *   1. fetch()         — after matchPath() finds the route (used by createTestClient + fallback)
@@ -890,7 +921,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   private async _runPermissionGate(
     baseCtx: BaseCtx,
     matchedRoute: Route<unknown>,
-    mod: VelnModule | null,
+    mod: OakBunModule | null,
   ): Promise<Response | null> {
     if (matchedRoute._pluginName === undefined) return null
 
@@ -927,7 +958,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   private async _runModuleOnRequest(
     baseCtx: BaseCtx,
     matchedRoute: Route<unknown>,
-    mod: VelnModule | null,
+    mod: OakBunModule | null,
   ): Promise<Response | null> {
     if (!mod) return null
     for (const hook of mod.onRequestHooks) {
@@ -950,7 +981,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   private async _runPlugins(
     baseCtx: BaseCtx,
     matchedRoute: Route<unknown>,
-    mod: VelnModule | null,
+    mod: OakBunModule | null,
   ): Promise<BaseCtx | Response> {
     let ctx: BaseCtx = baseCtx
     try {
@@ -1004,7 +1035,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   private async _runValidation(
     ctx: BaseCtx,
     matchedRoute: Route<unknown>,
-    mod: VelnModule | null,
+    mod: OakBunModule | null,
   ): Promise<Response | null> {
     if (!matchedRoute.schema) return null
     const schema = matchedRoute.schema
@@ -1050,7 +1081,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   // Runs after plugins (ctx.db is available) and before guards.
   private async _runServices(
     ctx: BaseCtx,
-    mod: VelnModule | null,
+    mod: OakBunModule | null,
   ): Promise<void> {
     const serviceDecls = this._allServiceDecls(mod)
     if (serviceDecls.length === 0) return
@@ -1063,7 +1094,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
 
     if (!ctx.db) {
       throw new Error(
-        '[veln] .use() service declarations found but ctx.db is not available. ' +
+        '[oakbun] .use() service declarations found but ctx.db is not available. ' +
         'Register dbPlugin() before declaring services.',
       )
     }
@@ -1082,7 +1113,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   private async _runGuards(
     ctx: BaseCtx,
     matchedRoute: Route<unknown>,
-    mod: VelnModule | null,
+    mod: OakBunModule | null,
   ): Promise<Response | null> {
     // Global guards
     for (const guard of this.globalGuards) {
@@ -1156,7 +1187,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   private async _runBeforeHandle(
     ctx: BaseCtx,
     matchedRoute: Route<unknown>,
-    mod: VelnModule | null,
+    mod: OakBunModule | null,
   ): Promise<Response | null> {
     // App-level hooks
     for (const hook of this._onBeforeHandleHooks) {
@@ -1198,7 +1229,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     baseCtx: BaseCtx,
     ctx: BaseCtx,
     matchedRoute: Route<unknown>,
-    mod: VelnModule | null,
+    mod: OakBunModule | null,
     requestQueue: RequestEventQueue,
   ): Promise<Response> {
     // Phase 5 — handler
@@ -1224,7 +1255,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
         const body: unknown = await response.clone().json()
         const result = matchedRoute.schema!.response!.safeParse(body)
         if (!result.success) {
-          this._onInternalError('[veln] Response validation failed:', result.error.issues)
+          this._onInternalError('[oakbun] Response validation failed:', result.error.issues)
           const errRes = new Response('Internal Server Error', { status: 500 })
           return this._runOnResponse(baseCtx, errRes, mod, undefined)
         }
@@ -1241,7 +1272,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
   // Always called — even on error paths — so onResponse truly "always runs".
   // flushQueue: only set on the success path (handler ran without error).
   //             After all onResponse hooks complete, the queue is flushed to the EventBus.
-  private async _runOnResponse(ctx: BaseCtx, response: Response, module?: VelnModule | null, flushQueue?: RequestEventQueue): Promise<Response> {
+  private async _runOnResponse(ctx: BaseCtx, response: Response, module?: OakBunModule | null, flushQueue?: RequestEventQueue): Promise<Response> {
     let current = response
 
     // App-level onResponse hooks
@@ -1311,9 +1342,9 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     return current
   }
 
-  private _handleError(err: unknown, ctx: any, route: Route<any>): Response | Promise<Response> {
+  private _handleError(err: unknown, ctx: any, route?: Route<any> | null): Response | Promise<Response> {
     // Error cascade: route onError → module onError → global onError → built-in fallback
-    if (route.onError) {
+    if (route?.onError) {
       try {
         return route.onError(err, ctx)
       } catch {
@@ -1321,7 +1352,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
       }
     }
 
-    if (route._module?.onError) {
+    if (route?._module?.onError) {
       try {
         return route._module.onError(err, ctx)
       } catch {
@@ -1338,7 +1369,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     }
 
     // Built-in fallback — structured error responses with machine-readable codes.
-    // ValidationError first (subclass of VelnError) — includes issues array.
+    // ValidationError first (subclass of OakBunError) — includes issues array.
     // Issues are masked by default (exposeIssues: false) to prevent schema info leaks.
     // Set createApp({ validation: { exposeIssues: true } }) for full Zod details in development.
     if (err instanceof ValidationError) {
@@ -1351,7 +1382,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
       )
     }
 
-    if (err instanceof VelnError) {
+    if (err instanceof OakBunError) {
       return Response.json(
         { error: err.name, code: err.code, message: err.message },
         { status: err.status },
@@ -1399,7 +1430,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
           await plugin.teardown()
         } catch (err) {
           // Log but don't rethrow — other teardowns must still run
-          this._onInternalError(`[veln] teardown failed for plugin "${plugin.name}":`, err)
+          this._onInternalError(`[oakbun] teardown failed for plugin "${plugin.name}":`, err)
         }
       }
     }
@@ -1435,7 +1466,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
    * For a pretty tree, use printRouteTree from @oakbun/logger.
    */
   printRoutes(options?: { title?: string; version?: string }): void {
-    const title   = options?.title   ?? 'Veln'
+    const title   = options?.title   ?? 'OakBun'
     const version = options?.version ? ` ${options.version}` : ''
     console.log(`\n  ${title}${version}\n`)
     for (const route of this.routes) {
@@ -1478,43 +1509,13 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
       for (const route of routes) {
         const captured = route
         methods[captured.method] = async (req: BunRequest, srv: import('bun').Server<unknown>) => {
-          // Lazy plugin install (same guard as fetch())
-          if (!this.installedPlugins) {
-            this.installedPlugins = true
-            for (const plugin of this.plugins) {
-              if (plugin.install) await plugin.install(this.hooks)
-            }
-          }
-
-          const url = new URL(req.url)
+          await this._ensurePluginsInstalled()
           const requestQueue = new RequestEventQueue()
-
-          const baseCtx: BaseCtx = {
-            req,
-            params: {},
-            query: parseQuery(url.search),
-            json: <T>(data: T, status = 200) => Response.json(data, { status }),
-            text: (data: string, status = 200) => new Response(data, { status, headers: { 'Content-Type': 'text/plain' } }),
-            html: (data: string, status = 200) => new Response(data, { status, headers: { 'Content-Type': 'text/html' } }),
-            stream: makeStreamResponse,
-            sse:    makeSSEResponse,
-            cookie: createCookieJar(req),
-            emit: (event, payload) => { requestQueue.collect(event as string, payload) },
-            _requestQueue: requestQueue,
-          }
+          const baseCtx = await this._createBaseCtx(req, requestQueue)
 
           // Run global onRequest hooks (before pipeline — same as fetch())
-          for (const hook of this._onRequestHooks) {
-            let earlyRes: Response | void
-            try {
-              earlyRes = await hook._fn(baseCtx)
-            } catch {
-              earlyRes = undefined
-            }
-            if (earlyRes instanceof Response) {
-              return this._runOnResponse(baseCtx, earlyRes, null)
-            }
-          }
+          const onRequestResult = await this._runGlobalOnRequest(baseCtx, captured)
+          if (onRequestResult) return onRequestResult
 
           // WS upgrade requests are handled by the fetch() fallback — skip here.
           // (Bun routes don't receive WS upgrade requests via the method handler.)
@@ -1534,21 +1535,11 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
     cb?: (port: number) => void,
     options?: { autoHandleSignals?: boolean },
   ): ReturnType<typeof Bun.serve> {
-    // Install plugins eagerly so cron handlers have access to the DB adapter
-    if (!this.installedPlugins) {
-      this.installedPlugins = true
-      for (const plugin of this.plugins) {
-        if (plugin.install) {
-          const result = plugin.install(this.hooks)
-          // If install returns a Promise, ignore it — sync plugins (dbPlugin) work fine here
-          if (result && typeof (result as any).then === 'function') {
-            (result as Promise<void>).catch((err) =>
-              this._onInternalError('[veln] Plugin install error during listen():', err),
-            )
-          }
-        }
-      }
-    }
+    // Start plugin installation eagerly. Native route handlers still await the
+    // same promise, so async plugins cannot race first requests.
+    void this._ensurePluginsInstalled().catch((err) =>
+      this._onInternalError('[oakbun] Plugin install error during listen():', err),
+    )
 
     // Schedule all registered cron jobs before starting the server
     this._scheduleCrons()
@@ -1589,7 +1580,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
 
     const processJobs = this._cronDefs.filter(d => d._mode !== 'os')
     if (!adapter && processJobs.length > 0) {
-      console.warn('[veln] .cron() jobs registered but no dbPlugin found — ctx.db will be unavailable in handlers')
+      console.warn('[oakbun] .cron() jobs registered but no dbPlugin found — ctx.db will be unavailable in handlers')
     }
 
     for (const def of this._cronDefs) {
@@ -1617,8 +1608,8 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
         console.log(`[Cron] ${def._name} — running...`)
         try {
           const sysCtx = createSystemCtx({ role: 'cron' })
-          const velnDb = adapter ? new VelnDB(adapter, this.hooks) : null
-          const boundDb = velnDb ? velnDb.withCtx(sysCtx) : null as unknown as import('../db/index').BoundVelnDB
+          const oakBunDb = adapter ? new OakBunDB(adapter, this.hooks) : null
+          const boundDb = oakBunDb ? oakBunDb.withCtx(sysCtx) : null as unknown as import('../db/index').BoundOakBunDB
 
           const services = def._services.length > 0 && boundDb
             ? instantiateServices(def._services, boundDb)
@@ -1658,7 +1649,7 @@ export class Veln<TCtx extends BaseCtx, TRoutes extends RouteMap = Record<never,
 }
 
 /**
- * createApp — creates a new Veln application instance.
+ * createApp — creates a new OakBun application instance.
  *
  * @param opts.auth        Authentication adapter (e.g. BetterAuth). Enables `ctx.user` and permission gates.
  * @param opts.validation  Validation options. Set `exposeIssues: true` to include raw Zod issues in 422
@@ -1684,6 +1675,6 @@ export function createApp(opts: {
   eventBus?: EventBusAdapter
   cronLock?: CronLockAdapter
   db?: { log?: { enabled?: boolean; n1Threshold?: number; logQueries?: boolean } }
-} = {}): Veln<BaseCtx, Record<never, never>, never> {
-  return new Veln<BaseCtx, Record<never, never>, never>(opts)
+} = {}): OakBun<BaseCtx, Record<never, never>, never> {
+  return new OakBun<BaseCtx, Record<never, never>, never>(opts)
 }

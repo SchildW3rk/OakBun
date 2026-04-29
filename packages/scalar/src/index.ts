@@ -11,7 +11,7 @@ export function scalarPlugin(
   options?: { path?: string; title?: string; version?: string },
 ): Plugin<BaseCtx, Record<never, never>> {
   const docPath = options?.path ?? '/docs'
-  const title   = options?.title   ?? 'Veln API'
+  const title   = options?.title   ?? 'OakBun API'
   const version = options?.version ?? '1.0.0'
 
   // Register the docs route immediately on the app

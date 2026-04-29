@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
 async function makeDir(): Promise<string> {
-  return mkdtemp(join(tmpdir(), 'veln-disco-'))
+  return mkdtemp(join(tmpdir(), 'oakbun-disco-'))
 }
 
 async function clean(dir: string) {

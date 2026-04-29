@@ -21,7 +21,7 @@ import {
   UnprocessableError,
   TooManyRequestsError,
   InternalError,
-  VelnError,            // base class
+  OakBunError,            // base class
 } from 'oakbun'
 ```
 
@@ -53,7 +53,7 @@ Throw errors anywhere — in route handlers, services, models, or guards:
 
 ## Error Response Format
 
-All `VelnError` subclasses produce a consistent JSON response:
+All `OakBunError` subclasses produce a consistent JSON response:
 
 ```json
 {
@@ -97,7 +97,7 @@ Override error handling at module or app level:
 ```ts
 // App-level
 app.onError((err, ctx) => {
-  if (err instanceof VelnError) {
+  if (err instanceof OakBunError) {
     return ctx.json({ error: err.message, code: err.code }, err.status)
   }
   console.error(err)
@@ -112,10 +112,10 @@ defineModule('/api')
   })
 ```
 
-## VelnError Base Class
+## OakBunError Base Class
 
 ```ts
-class VelnError extends Error {
+class OakBunError extends Error {
   constructor(
     message: string,
     public readonly status: number,
@@ -127,7 +127,7 @@ class VelnError extends Error {
 Extend for custom domain errors:
 
 ```ts
-class PaymentRequiredError extends VelnError {
+class PaymentRequiredError extends OakBunError {
   constructor(message = 'Payment required') {
     super(message, 402, 'PAYMENT_REQUIRED')
   }
@@ -140,7 +140,7 @@ Errors propagate in this order until handled:
 1. Route-level `onError`
 2. Module-level `onError`
 3. App-level `onError`
-4. OakBun's default handler (converts `VelnError` to JSON, unknown errors to 500)
+4. OakBun's default handler (converts `OakBunError` to JSON, unknown errors to 500)
 
 ## See Also
 

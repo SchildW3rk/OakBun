@@ -71,7 +71,7 @@ function formatData(
 }
 
 // ── createMinimalLogger ───────────────────────────────────────────────────────
-// Pure console-based logger — no @veln/logger dependency.
+// Pure console-based logger — no @oakbun/logger dependency.
 // Used by defineService (.options({ log })), defineModel (.options({ log })),
 // and defineCron (.options({ log })) when no external logger plugin is registered.
 

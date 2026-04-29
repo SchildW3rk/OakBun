@@ -202,7 +202,7 @@ The following fields are added to `ctx` when the corresponding plugin is registe
 
 ### ctx.db
 
-Added by `dbPlugin`. A `BoundVelnDB` instance scoped to the current request (tracks query log, wraps transactions).
+Added by `dbPlugin`. A `BoundOakBunDB` instance scoped to the current request (tracks query log, wraps transactions).
 
 ```ts
 const user = await ctx.db.from(usersTable).where({ id: ctx.params.id }).first()
@@ -311,7 +311,7 @@ interface QueryLogEntry {
 | `sse()` | `(writer) => Response` | BaseCtx | always |
 | `cookie` | `CookieJar` | BaseCtx | always |
 | `emit()` | `(event, payload) => void` | BaseCtx | always |
-| `db` | `BoundVelnDB` | dbPlugin | optional |
+| `db` | `BoundOakBunDB` | dbPlugin | optional |
 | `logger` | `Logger` | loggerPlugin | optional |
 | `requestId` | `string` | requestIdPlugin | optional |
 | `jwtUser` | `JwtPayload \| undefined` | @oakbun/jwt | optional |

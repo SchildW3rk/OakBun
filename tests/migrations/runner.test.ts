@@ -6,7 +6,7 @@ import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { createMigrator, splitSqlStatements } from '../../packages/core/src/db/migrations/index'
 
 async function makeTempDir(): Promise<string> {
-  return mkdtemp(join(tmpdir(), 'veln-migrations-'))
+  return mkdtemp(join(tmpdir(), 'oakbun-migrations-'))
 }
 
 async function cleanDir(dir: string) {
@@ -129,7 +129,7 @@ describe('createMigrator — run()', () => {
 
   test('run() with non-existent dir returns empty results', async () => {
     const adapter  = new SQLiteAdapter()
-    const migrator = createMigrator(adapter, { migrationsDir: '/tmp/veln-nonexistent-12345' })
+    const migrator = createMigrator(adapter, { migrationsDir: '/tmp/oakbun-nonexistent-12345' })
     const results  = await migrator.run()
     expect(results).toHaveLength(0)
   })
@@ -166,9 +166,9 @@ describe('createMigrator — status()', () => {
       expect(before.every(s => s.status === 'pending')).toBe(true)
 
       // Run first only
-      await adapter.execute(`CREATE TABLE IF NOT EXISTS "_veln_migrations" ("id" INTEGER PRIMARY KEY AUTOINCREMENT, "name" TEXT NOT NULL UNIQUE, "applied_at" TEXT NOT NULL)`)
+      await adapter.execute(`CREATE TABLE IF NOT EXISTS "_oakbun_migrations" ("id" INTEGER PRIMARY KEY AUTOINCREMENT, "name" TEXT NOT NULL UNIQUE, "applied_at" TEXT NOT NULL)`)
       await adapter.execute(`CREATE TABLE a (id INTEGER PRIMARY KEY)`)
-      await adapter.execute(`INSERT INTO "_veln_migrations" ("name", "applied_at") VALUES ('0001_initial.sql', ?)`, [new Date().toISOString()])
+      await adapter.execute(`INSERT INTO "_oakbun_migrations" ("name", "applied_at") VALUES ('0001_initial.sql', ?)`, [new Date().toISOString()])
 
       const after = await migrator.status()
       expect(after[0].status).toBe('applied')

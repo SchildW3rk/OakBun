@@ -49,8 +49,8 @@ export function createSystemCtx<TExtra extends object = Record<never, never>>(
       }),
     cookie: emptyCookieJar,
     emit:   () => {},
-    stream: () => { throw new Error('[veln] stream not available in system context') },
-    sse:    () => { throw new Error('[veln] sse not available in system context') },
+    stream: () => { throw new Error('[oakbun] stream not available in system context') },
+    sse:    () => { throw new Error('[oakbun] sse not available in system context') },
   }
 
   return { ...base, ...(extra ?? {}) } as BaseCtx & TExtra

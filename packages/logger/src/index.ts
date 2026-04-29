@@ -2,10 +2,10 @@ import { maskData }                    from './masker'
 import { formatPretty, formatJson }   from './formatter'
 import { isTTY }                      from './colors'
 import { DEFAULT_MASK_KEYS }          from './types'
-import type { VelnLogger, LoggerOptions } from './types'
+import type { OakBunLogger, LoggerOptions } from './types'
 
 export { DEFAULT_MASK_KEYS }         from './types'
-export type { VelnLogger, LoggerOptions } from './types'
+export type { OakBunLogger, LoggerOptions } from './types'
 export { isTTY, colors, colorMethod } from './colors'
 export { maskData }                   from './masker'
 export { formatPretty, formatJson }   from './formatter'
@@ -13,7 +13,7 @@ export { printRouteTree }             from './tree'
 export type { RouteInfo }             from './tree'
 export { loggerPlugin }               from './plugin'
 
-export function createLogger(options: LoggerOptions = {}): VelnLogger {
+export function createLogger(options: LoggerOptions = {}): OakBunLogger {
   const {
     scope,
     level = 'info',

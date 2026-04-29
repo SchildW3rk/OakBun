@@ -29,10 +29,10 @@ export interface QueryLogEntry {
 
 export type AdapterDialect = 'sqlite' | 'postgres' | 'mysql'
 
-export interface VelnAdapter {
+export interface OakBunAdapter {
   query<T = Record<string, unknown>>(sql: string, params?: BindingValue[]): Promise<T[]>
   execute(sql: string, params?: BindingValue[]): Promise<ExecuteResult>
-  transaction<T>(fn: (tx: VelnAdapter) => Promise<T>): Promise<T>
+  transaction<T>(fn: (tx: OakBunAdapter) => Promise<T>): Promise<T>
   close(): Promise<void>
   /**
    * Dialect identifier — used by internal tooling (e.g. migrations) to emit

@@ -1,21 +1,21 @@
-import type { VelnAdapter } from './types'
+import type { OakBunAdapter } from './types'
 
 export type AdapterConfig =
   | { adapter: 'sqlite';   path?: string }
   | { adapter: 'postgres'; connectionString: string; maxConnections?: number }
   | { adapter: 'mysql';    connectionString: string; maxConnections?: number }
 
-export function isVelnAdapter(value: unknown): value is VelnAdapter {
+export function isOakBunAdapter(value: unknown): value is OakBunAdapter {
   return (
     typeof value === 'object' &&
     value !== null &&
-    typeof (value as VelnAdapter).query   === 'function' &&
-    typeof (value as VelnAdapter).execute === 'function'
+    typeof (value as OakBunAdapter).query   === 'function' &&
+    typeof (value as OakBunAdapter).execute === 'function'
   )
 }
 
-export function resolveAdapter(config: AdapterConfig | VelnAdapter): VelnAdapter {
-  if (isVelnAdapter(config)) return config
+export function resolveAdapter(config: AdapterConfig | OakBunAdapter): OakBunAdapter {
+  if (isOakBunAdapter(config)) return config
 
   const cfg = config as AdapterConfig
 

@@ -114,7 +114,7 @@ describe('.route() — happy path', () => {
     expect(res.status).toBe(200)
   })
 
-  test('.meta() sets tag + description on VelnModule', () => {
+  test('.meta() sets tag + description on OakBunModule', () => {
     const mod = defineModule('/api')
       .meta({ tag: 'Users', description: 'User Management' })
       .build()

@@ -6,7 +6,7 @@ import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { makeMigration } from '../../packages/core/src/cli/commands/make/migration'
 
 async function makeDir(): Promise<string> {
-  return mkdtemp(join(tmpdir(), 'veln-cli-'))
+  return mkdtemp(join(tmpdir(), 'oakbun-cli-'))
 }
 
 async function clean(dir: string) {

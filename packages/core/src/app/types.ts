@@ -1,13 +1,13 @@
-import type { EventBus, VelnEvents } from '../events/index'
-import type { BoundVelnDB } from '../db/index'
+import type { EventBus, OakBunEvents } from '../events/index'
+import type { BoundOakBunDB } from '../db/index'
 import type { ZodTypeAny, ZodIssue } from 'zod'
-import { VelnError } from '../errors/index'
+import { OakBunError } from '../errors/index'
 import { createMinimalLogger } from './logger'
 
-// ── VelnWsAdapter — extension point for @veln/ws ─────────────────────────────
-// Core holds only this minimal interface. @veln/ws provides the full implementation.
+// ── OakBunWsAdapter — extension point for @oakbun/ws ─────────────────────────────
+// Core holds only this minimal interface. @oakbun/ws provides the full implementation.
 // Registered via app.registerWsAdapter(adapter).
-export interface VelnWsAdapter {
+export interface OakBunWsAdapter {
   /** Called in fetch() when an HTTP Upgrade: websocket request arrives. */
   handleUpgrade(
     req: Request,
@@ -25,7 +25,7 @@ export interface VelnWsAdapter {
   getRoute(path: string): WsRouteShape | undefined
 }
 
-/** Minimal WS route shape that Core knows about. Full type lives in @veln/ws. */
+/** Minimal WS route shape that Core knows about. Full type lives in @oakbun/ws. */
 export interface WsRouteShape {
   path: string
   _module: unknown | null
@@ -35,7 +35,7 @@ export interface WsRouteShape {
 
 // ── Auth Payload ──────────────────────────────────────────────────────────────
 // Minimal JWT/session payload shape used by WsCtx and plugins.
-// @veln/jwt re-exports this as JwtPayload for backward compatibility.
+// @oakbun/jwt re-exports this as JwtPayload for backward compatibility.
 export interface AuthPayload {
   sub?: string
   iat?: number
@@ -63,7 +63,7 @@ export interface RouteEntry {
 export type RouteMap = Record<RouteKey, RouteEntry>
 
 // ValidationError — thrown by validation middleware, caught by error cascade
-export class ValidationError extends VelnError {
+export class ValidationError extends OakBunError {
   readonly issues: ZodIssue[]
 
   constructor(zodError: import('zod').ZodError) {
@@ -268,17 +268,17 @@ export interface BaseCtx {
   sse: (writer: (controller: SseController) => void | Promise<void>) => Response
   events?: EventBus
   logger?: Logger
-  db?: BoundVelnDB
+  db?: BoundOakBunDB
   cookie: import('./cookies').CookieJar
   // Typed event emission into the per-request RequestEventQueue.
   // Fire & forget — buffered until after onResponse, then flushed to EventBus.
-  emit: <K extends keyof VelnEvents>(event: K, payload: VelnEvents[K]) => void
+  emit: <K extends keyof OakBunEvents>(event: K, payload: OakBunEvents[K]) => void
   // _requestQueue: framework-internal. Set by fetch() before plugins run.
-  // dbPlugin reads it to bind the queue to BoundVelnDB.
+  // dbPlugin reads it to bind the queue to BoundOakBunDB.
   // Never exposed to user-land handlers — prefixed _ to signal framework-only.
   _requestQueue?: import('../events/index').RequestEventQueue
   // _queryLog: framework-internal. Set by fetch() when N+1 detection is enabled.
-  // dbPlugin reads it and passes it to BoundVelnDB to count queries per request.
+  // dbPlugin reads it and passes it to BoundOakBunDB to count queries per request.
   // Never exposed to user-land handlers — prefixed _ to signal framework-only.
   _queryLog?: import('../db/index').QueryLog
   // _startTime: optional timing field, set by timing middleware.
@@ -440,7 +440,7 @@ export interface Route<TCtx = BaseCtx> {
   // Set when the route definition has guard: false — skips module-level guards for this route.
   moduleGuardOptOut?: true
   // Reference to the module this route belongs to (set during registration)
-  _module?: import('./module').VelnModule
+  _module?: import('./module').OakBunModule
   // Plugin that contributed this route via .modules() — set by app.plugin() so the
   // permission check in _runRoute can look up the right plugin without a separate Map.
   _pluginName?: string

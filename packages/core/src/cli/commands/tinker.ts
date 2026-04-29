@@ -1,5 +1,5 @@
 import { resolve } from 'node:path'
-import type { VelnConfig } from '../config/types'
+import type { OakBunConfig } from '../config/types'
 import type { TableDef, SchemaMap } from '../../schema/table'
 import { discoverTables } from '../discovery/tables'
 import { discoverServices } from '../discovery/services'
@@ -104,7 +104,7 @@ function printBanner(
   console.log('  \x1b[1mOakBun Shell\x1b[0m')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('  \x1b[1mContext:\x1b[0m')
-  console.log(`  \x1b[36mdb\x1b[0m          → BoundVelnDB`)
+  console.log(`  \x1b[36mdb\x1b[0m          → BoundOakBunDB`)
   console.log(`  \x1b[36mtables\x1b[0m      → { ${tableNames.join(', ') || 'none'} }`)
   console.log(`  \x1b[36mservices\x1b[0m    → { ${serviceNames.join(', ') || 'none'} }`)
   console.log(`  \x1b[36mmigrator\x1b[0m    → Migrator`)
@@ -134,9 +134,9 @@ function printHelp(): void {
   console.log('  .exit     quit the REPL')
   console.log('')
   console.log('  \x1b[1mContext variables:\x1b[0m')
-  console.log('  db        BoundVelnDB — db.from(tables.users).select()')
+  console.log('  db        BoundOakBunDB — db.from(tables.users).select()')
   console.log('  tables    discovered TableDefs by name')
-  console.log('  adapter   raw VelnAdapter — adapter.query("SELECT ...")')
+  console.log('  adapter   raw OakBunAdapter — adapter.query("SELECT ...")')
   console.log('  services  instantiated services by key')
   console.log('  bus       EventBus — bus.emit("user.created", payload)')
   console.log('  migrator  Migrator — migrator.status() / migrator.run()')
@@ -210,7 +210,7 @@ function redrawLine(state: ReplState): void {
 
 // ── Main REPL entry ───────────────────────────────────────────────────────────
 
-export async function tinker(_args: string[], config: VelnConfig): Promise<void> {
+export async function tinker(_args: string[], config: OakBunConfig): Promise<void> {
   const adapter      = await loadAdapter(config)
   const tableList    = await discoverTables(config)
   const serviceDefs  = await discoverServices(config)
@@ -218,7 +218,7 @@ export async function tinker(_args: string[], config: VelnConfig): Promise<void>
   const tables: Record<string, TableDef<unknown, SchemaMap>> = {}
   for (const t of tableList) tables[t.name] = t
 
-  const { VelnDB }            = await import('../../db/index')
+  const { OakBunDB }            = await import('../../db/index')
   const { HookExecutor }      = await import('../../hooks/executor')
   const { RequestEventQueue, EventBus } = await import('../../events/index')
   const { createSystemCtx }   = await import('../../app/system-ctx')
@@ -227,8 +227,8 @@ export async function tinker(_args: string[], config: VelnConfig): Promise<void>
 
   const hooks  = new HookExecutor()
   hooks.setAdapter(adapter)
-  const velnDB   = new VelnDB(adapter, hooks)
-  const db       = velnDB.withCtx(createSystemCtx(), new RequestEventQueue())
+  const oakBunDB   = new OakBunDB(adapter, hooks)
+  const db       = oakBunDB.withCtx(createSystemCtx(), new RequestEventQueue())
   const services = instantiateServices(serviceDefs, db)
   const bus      = new EventBus()
   const migrator = createMigrator(adapter, {

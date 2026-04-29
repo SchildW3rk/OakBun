@@ -26,7 +26,7 @@ export function printRouteTree(
     port?:    number
   } = {},
 ): string {
-  const title   = options.title   ?? 'Veln'
+  const title   = options.title   ?? 'OakBun'
   const version = options.version
   const port    = options.port
 

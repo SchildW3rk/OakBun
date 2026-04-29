@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 import { HookExecutor } from '../../packages/core/src/hooks/executor'
-import { VelnDB, BoundVelnDB } from '../../packages/core/src/db/index'
+import { OakBunDB, BoundOakBunDB } from '../../packages/core/src/db/index'
 import { defineTable, toCreateTableSql } from '../../packages/core/src/schema/table'
 import type { InferRow } from '../../packages/core/src/schema/table'
 import { column } from '../../packages/core/src/schema/column'
@@ -23,15 +23,15 @@ type User = InferRow<typeof usersTable.schema>
 function createSetup() {
   const adapter = new SQLiteAdapter()
   const exec    = new HookExecutor()
-  const db      = new VelnDB(adapter, exec)
+  const db      = new OakBunDB(adapter, exec)
   const ctx     = { user: { id: 'u-1', role: 'admin' } }
   const bound   = db.withCtx(ctx)
   return { adapter, exec, db, ctx, bound }
 }
 
-// ── VelnDB — insert ────────────────────────────────────────────────────────
+// ── OakBunDB — insert ────────────────────────────────────────────────────────
 
-describe('VelnDB — insert', () => {
+describe('OakBunDB — insert', () => {
   test('inserts and returns full row', async () => {
     const { adapter, bound } = createSetup()
     await adapter.execute(toCreateTableSql(usersTable))
@@ -111,9 +111,9 @@ describe('VelnDB — insert', () => {
   })
 })
 
-// ── VelnDB — select ────────────────────────────────────────────────────────
+// ── OakBunDB — select ────────────────────────────────────────────────────────
 
-describe('VelnDB — select', () => {
+describe('OakBunDB — select', () => {
   test('select() gibt [] wenn keine rows', async () => {
     const { adapter, bound } = createSetup()
     await adapter.execute(toCreateTableSql(usersTable))
@@ -176,9 +176,9 @@ describe('VelnDB — select', () => {
   })
 })
 
-// ── VelnDB — update ────────────────────────────────────────────────────────
+// ── OakBunDB — update ────────────────────────────────────────────────────────
 
-describe('VelnDB — update', () => {
+describe('OakBunDB — update', () => {
   test('update() happy path — updated row zurückgegeben', async () => {
     const { adapter, bound } = createSetup()
     await adapter.execute(toCreateTableSql(usersTable))
@@ -257,9 +257,9 @@ describe('VelnDB — update', () => {
   })
 })
 
-// ── VelnDB — delete ────────────────────────────────────────────────────────
+// ── OakBunDB — delete ────────────────────────────────────────────────────────
 
-describe('VelnDB — delete', () => {
+describe('OakBunDB — delete', () => {
   test('delete() happy path — deleted entity zurückgegeben', async () => {
     const { adapter, bound } = createSetup()
     await adapter.execute(toCreateTableSql(usersTable))
@@ -337,9 +337,9 @@ describe('VelnDB — delete', () => {
   })
 })
 
-// ── VelnDB — transaction ───────────────────────────────────────────────────
+// ── OakBunDB — transaction ───────────────────────────────────────────────────
 
-describe('VelnDB — transaction', () => {
+describe('OakBunDB — transaction', () => {
   test('transaction commit — alle ops durch, result korrekt', async () => {
     const { adapter, bound } = createSetup()
     await adapter.execute(toCreateTableSql(usersTable))
@@ -385,9 +385,9 @@ describe('VelnDB — transaction', () => {
   })
 })
 
-// ── VelnDB — hook order ────────────────────────────────────────────────────
+// ── OakBunDB — hook order ────────────────────────────────────────────────────
 
-describe('VelnDB — hook order', () => {
+describe('OakBunDB — hook order', () => {
   test('table-level hooks laufen vor module-level hooks', async () => {
     const order: string[] = []
 
@@ -417,7 +417,7 @@ describe('VelnDB — hook order', () => {
       },
     })
 
-    const db    = new VelnDB(adapter, exec)
+    const db    = new OakBunDB(adapter, exec)
     const bound = db.withCtx({})
 
     await bound.into(orderedTable).insert({ name: 'Test' })
@@ -442,7 +442,7 @@ describe('InsertBuilder — no N+1 (INSERT RETURNING *)', () => {
     }
 
     const exec  = new HookExecutor()
-    const db    = new VelnDB(adapter, exec)
+    const db    = new OakBunDB(adapter, exec)
     const bound = db.withCtx({})
 
     await bound.into(usersTable).insert({ name: 'Alice', email: 'alice@n1test.com' })

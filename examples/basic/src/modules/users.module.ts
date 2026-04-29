@@ -5,7 +5,7 @@ import { UserService }  from '../services/user.service'
 import { usersTable }   from '../schema/users'
 import { auditLogs }    from '../schema/audit'
 
-const SECRET = process.env.JWT_SECRET ?? 'veln-example-secret'
+const SECRET = process.env.JWT_SECRET ?? 'oakbun-example-secret'
 
 const userSchema = z.object({
   id:        z.number(),

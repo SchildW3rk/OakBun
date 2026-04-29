@@ -1,4 +1,4 @@
-# Veln — Design Specification v0.1
+# OakBun — Design Specification v0.1
 
 ## Philosophy
 
@@ -25,12 +25,12 @@
 
 ## Core Primitives
 
-### 1. VelnAdapter (Database Interface)
+### 1. OakBunAdapter (Database Interface)
 
 Inspired by Go's `database/sql` — a single interface, multiple backends.
 
 ```
-VelnAdapter
+OakBunAdapter
   .query<T>(sql, params)     → T[]
   .execute(sql, params)      → { rowsAffected }
   .transaction(fn)           → T
@@ -116,7 +116,7 @@ Each plugin is three phases: install (once), request (per-request ctx extension)
 ```
 createApp()
   .plugin(logger())          → ctx & { logger: Logger }
-  .plugin(postgres(config))  → ctx & { db: BoundVelnDB }
+  .plugin(postgres(config))  → ctx & { db: BoundOakBunDB }
   .plugin(auth())            → ctx & { user: User | null }
 ```
 
@@ -151,7 +151,7 @@ defineModule('/documents')
 
 ```
 Phase 1 — Foundation (this session)
-  ✅ VelnAdapter interface
+  ✅ OakBunAdapter interface
   ✅ SQLiteAdapter (bun:sqlite, fully tested)
   ✅ PostgresAdapter (Bun.SQL, stub — no external DB needed for tests)
   ✅ Column DSL (phantom types, full inference)
@@ -159,7 +159,7 @@ Phase 1 — Foundation (this session)
   ✅ HookExecutor (array-based, two levels, deterministic order)
 
 Phase 2 — Query Layer
-  → VelnDB (wraps adapter + hooks)
+  → OakBunDB (wraps adapter + hooks)
   → QueryBuilder (.from, .where, .select, .first, .update, .delete)
   → InsertBuilder (.into, .insert)
   → SQL generation helpers
@@ -174,8 +174,8 @@ Phase 3 — Application Layer
 
 Phase 4 — DX
   → RPC Client (type-safe, no codegen)
-  → create-veln CLI
-  → @veln/testing utilities
+  → create-oakbun CLI
+  → @oakbun/testing utilities
 ```
 
 ---

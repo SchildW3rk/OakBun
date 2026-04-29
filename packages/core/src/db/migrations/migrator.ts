@@ -1,4 +1,4 @@
-import type { VelnAdapter } from '../../adapter/types'
+import type { OakBunAdapter } from '../../adapter/types'
 import type { AdapterConfig } from '../../adapter/resolve'
 import { resolveAdapter } from '../../adapter/resolve'
 import type { MigrationResult, MigrationStatus, MigratorOptions } from './types'
@@ -10,7 +10,7 @@ export interface Migrator {
   rollback(): Promise<void>
 }
 
-export function createMigrator(adapterOrConfig: AdapterConfig | VelnAdapter, options: MigratorOptions): Migrator {
+export function createMigrator(adapterOrConfig: AdapterConfig | OakBunAdapter, options: MigratorOptions): Migrator {
   const adapter = resolveAdapter(adapterOrConfig)
   return {
     run:      () => run(adapter, options),

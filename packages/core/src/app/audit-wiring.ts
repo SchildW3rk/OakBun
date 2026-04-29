@@ -1,4 +1,4 @@
-import type { VelnAdapter } from '../adapter/types'
+import type { OakBunAdapter } from '../adapter/types'
 import type { SchemaMap } from '../schema/table'
 import type { ModuleHookHandlers } from '../hooks/types'
 import type { AuditDeclaration } from './module'
@@ -21,7 +21,7 @@ import { applyRedact } from '../schema/audit'
 
 export function buildAuditHooks<T extends Record<string, unknown>, TCtx, S extends SchemaMap>(
   decl: AuditDeclaration<T, TCtx, S>,
-  adapter: VelnAdapter,
+  adapter: OakBunAdapter,
 ): ModuleHookHandlers<T, unknown> {
   const { table, config } = decl
   const redactFields = (config.redact ?? []) as string[]

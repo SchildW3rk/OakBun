@@ -1,4 +1,4 @@
-import type { BoundVelnDB } from '../db/index'
+import type { BoundOakBunDB } from '../db/index'
 import type { ServiceDef } from '../service/index'
 import type { Logger, LogOptions } from '../app/types'
 import { createMinimalLogger } from '../app/logger'
@@ -6,7 +6,7 @@ import { createMinimalLogger } from '../app/logger'
 // ── CronCtx ───────────────────────────────────────────────────────────────────
 
 export interface CronCtx {
-  db: BoundVelnDB
+  db: BoundOakBunDB
   [key: string]: unknown
 }
 

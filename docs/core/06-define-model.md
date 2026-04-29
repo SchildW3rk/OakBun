@@ -7,7 +7,7 @@ related: ["defineService", "defineTable", "defineResource"]
 
 # defineModel
 
-Defines a DB-backed model — a factory that receives a `BoundVelnDB` and returns an object with query methods. Models are injected into services as dependencies.
+Defines a DB-backed model — a factory that receives a `BoundOakBunDB` and returns an object with query methods. Models are injected into services as dependencies.
 
 ## Signature
 
@@ -22,7 +22,7 @@ function defineModel<TName extends string, T>(
 function defineModel<TName extends string, T, TDef>(
   name: TName,
   table: TableDef<T>,
-  factory: (db: BoundVelnDB, opts: { logger: Logger }) => TDef
+  factory: (db: BoundOakBunDB, opts: { logger: Logger }) => TDef
 ): ModelDef<TName, TDef>
 ```
 
@@ -107,7 +107,7 @@ const UserService = defineService('users')
 The factory return value is wrapped with a `.db` accessor:
 
 ```ts
-type ModelInstance<TDef> = TDef & { readonly db: BoundVelnDB }
+type ModelInstance<TDef> = TDef & { readonly db: BoundOakBunDB }
 ```
 
 ## ModelDef Type
@@ -115,7 +115,7 @@ type ModelInstance<TDef> = TDef & { readonly db: BoundVelnDB }
 ```ts
 interface ModelDef<TName, TDef> {
   readonly _modelName: TName
-  readonly _factory:   (db: BoundVelnDB) => ModelInstance<TDef>
+  readonly _factory:   (db: BoundOakBunDB) => ModelInstance<TDef>
 }
 ```
 

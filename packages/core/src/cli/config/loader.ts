@@ -1,13 +1,13 @@
 import { resolve } from 'node:path'
-import type { VelnConfig } from './types'
+import type { OakBunConfig } from './types'
 
-export async function loadConfig(): Promise<VelnConfig> {
-  const candidates = ['oak.config.ts', 'oak.config.js', 'veln.config.ts', 'veln.config.js']
+export async function loadConfig(): Promise<OakBunConfig> {
+  const candidates = ['oak.config.ts', 'oak.config.js', 'oakbun.config.ts', 'oakbun.config.js']
 
   for (const rel of candidates) {
     const abs = resolve(process.cwd(), rel)
     if (await Bun.file(abs).exists()) {
-      const mod = await import(abs) as { default?: VelnConfig }
+      const mod = await import(abs) as { default?: OakBunConfig }
       return mod.default ?? {}
     }
   }

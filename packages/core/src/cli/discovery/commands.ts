@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import type { CommandDef } from '../config/types'
-import type { VelnConfig } from '../config/types'
+import type { OakBunConfig } from '../config/types'
 import { COMMAND_SCAN_PATHS } from '../config/defaults'
 
 function isCommandDef(x: unknown): x is CommandDef {
@@ -12,7 +12,7 @@ function isCommandDef(x: unknown): x is CommandDef {
   )
 }
 
-function resolveCommandPaths(config: VelnConfig): string[] {
+function resolveCommandPaths(config: OakBunConfig): string[] {
   const cwd      = process.cwd()
   const relative = config.commands
     ? [config.commands]
@@ -22,7 +22,7 @@ function resolveCommandPaths(config: VelnConfig): string[] {
   return relative.map(p => resolve(cwd, p))
 }
 
-export async function discoverCommands(config: VelnConfig): Promise<CommandDef[]> {
+export async function discoverCommands(config: OakBunConfig): Promise<CommandDef[]> {
   const commands:  CommandDef[] = []
   const scanPaths = resolveCommandPaths(config)
 

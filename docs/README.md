@@ -39,7 +39,7 @@ OakBun is a Bun-native backend framework. Type-safe routing, a built-in SQL laye
 
 | File | Description |
 |---|---|
-| [Overview](./sql/01-overview.md) | dbPlugin, BoundVelnDB, adapters |
+| [Overview](./sql/01-overview.md) | dbPlugin, BoundOakBunDB, adapters |
 | [SelectBuilder](./sql/02-select-builder.md) | Fluent query builder |
 | [Where Operators](./sql/03-where-operators.md) | Filters, AND/OR, NULL checks |
 | [Pagination](./sql/04-pagination.md) | page(), limit(), offset() |

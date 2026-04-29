@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test'
 import {
-  VelnError,
+  OakBunError,
   BadRequestError,
   UnauthorizedError,
   ForbiddenError,
@@ -12,19 +12,19 @@ import {
 } from '../../packages/core/src/errors/index'
 import { ValidationError, createApp } from '../../packages/core/src/index'
 
-// ── 1. VelnError base class ───────────────────────────────────────────────────
+// ── 1. OakBunError base class ───────────────────────────────────────────────────
 
-describe('VelnError — base class', () => {
+describe('OakBunError — base class', () => {
   test('constructs with message, status, code', () => {
-    const err = new VelnError('something failed', 418, 'IM_A_TEAPOT')
+    const err = new OakBunError('something failed', 418, 'IM_A_TEAPOT')
     expect(err.message).toBe('something failed')
     expect(err.status).toBe(418)
     expect(err.code).toBe('IM_A_TEAPOT')
-    expect(err.name).toBe('VelnError')
+    expect(err.name).toBe('OakBunError')
   })
 
   test('instanceof Error', () => {
-    expect(new VelnError('x', 500, 'X') instanceof Error).toBe(true)
+    expect(new OakBunError('x', 500, 'X') instanceof Error).toBe(true)
   })
 })
 
@@ -199,21 +199,21 @@ describe('ValidationError — structured response with issues', () => {
   })
 })
 
-// ── 6. VelnError instanceof checks ───────────────────────────────────────────
+// ── 6. OakBunError instanceof checks ───────────────────────────────────────────
 
-describe('VelnError — instanceof chain', () => {
-  test('NotFoundError instanceof VelnError and Error', () => {
+describe('OakBunError — instanceof chain', () => {
+  test('NotFoundError instanceof OakBunError and Error', () => {
     const err = new NotFoundError()
     expect(err instanceof NotFoundError).toBe(true)
-    expect(err instanceof VelnError).toBe(true)
+    expect(err instanceof OakBunError).toBe(true)
     expect(err instanceof Error).toBe(true)
   })
 
-  test('ValidationError instanceof VelnError', () => {
+  test('ValidationError instanceof OakBunError', () => {
     const { ZodError } = require('zod')
     const zodErr = new ZodError([])
     const err = new ValidationError(zodErr)
-    expect(err instanceof VelnError).toBe(true)
+    expect(err instanceof OakBunError).toBe(true)
     expect(err.code).toBe('VALIDATION_ERROR')
     expect(err.status).toBe(422)
   })

@@ -164,7 +164,7 @@ describe('EventBus — _emit (internal API)', () => {
   })
 })
 
-describe('EventBus — VelnEvents typed overload', () => {
+describe('EventBus — OakBunEvents typed overload', () => {
   test('on() mit bekanntem event-string funktioniert runtime korrekt', async () => {
     const bus = new EventBus()
     const received: unknown[] = []

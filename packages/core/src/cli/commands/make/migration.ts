@@ -1,6 +1,6 @@
 import { readdir, writeFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { VelnConfig } from '../../config/types'
+import type { OakBunConfig } from '../../config/types'
 
 async function nextMigrationNumber(dir: string): Promise<number> {
   let entries: string[]
@@ -20,7 +20,7 @@ async function nextMigrationNumber(dir: string): Promise<number> {
   return nums.length === 0 ? 1 : Math.max(...nums) + 1
 }
 
-export async function makeMigration(args: string[], config: VelnConfig): Promise<void> {
+export async function makeMigration(args: string[], config: OakBunConfig): Promise<void> {
   const name           = args[0] ?? 'migration'
   const migrationsDir  = config.migrations ?? './migrations'
   const num            = await nextMigrationNumber(migrationsDir)

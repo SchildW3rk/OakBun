@@ -78,7 +78,7 @@ describe('scalarPlugin — HTML content', () => {
     const app = makeApp()
     const res  = await app.fetch(new Request('http://localhost/scalar'))
     const html = await res.text()
-    expect(html).toContain('Veln API')
+    expect(html).toContain('OakBun API')
   })
 
   test('HTML contains default theme', async () => {

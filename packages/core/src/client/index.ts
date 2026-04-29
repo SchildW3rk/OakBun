@@ -5,8 +5,8 @@ export type { TestClientOptions }    from './test-client'
 
 import type { RouteMap, RouteEntry } from '../app/types'
 import type { ZodTypeAny } from 'zod'
-import { VelnClientError } from './error'
-export { VelnClientError } from './error'
+import { OakBunClientError } from './error'
+export { OakBunClientError } from './error'
 
 // Helper types — all eager, no conditional on generic parameter
 type RouteResponse<TEntry extends RouteEntry> =
@@ -33,7 +33,7 @@ type ClientOptions<TEntry extends RouteEntry> = {
 type StripMethod<M extends string, K extends string> =
   K extends `${M} ${infer P}` ? P : never
 
-type VelnClient<TRoutes extends RouteMap> = {
+type OakBunClient<TRoutes extends RouteMap> = {
   get<P extends StripMethod<'GET', Extract<keyof TRoutes, `GET /${string}`>>>(
     path: P,
     options?: ClientOptions<TRoutes[`GET ${P}`]>,
@@ -73,7 +73,7 @@ type FetchFn = (input: Request) => Promise<Response>
 export function createClient<TApp>(
   baseUrl: string,
   options?: { fetch?: FetchFn },
-): VelnClient<ExtractRoutes<TApp> extends RouteMap ? ExtractRoutes<TApp> : Record<never, never>> {
+): OakBunClient<ExtractRoutes<TApp> extends RouteMap ? ExtractRoutes<TApp> : Record<never, never>> {
   const fetchFn: FetchFn = options?.fetch ?? ((req) => globalThis.fetch(req))
 
   async function request(method: string, path: string, opts?: ClientOptions<RouteEntry>): Promise<unknown> {
@@ -108,9 +108,9 @@ export function createClient<TApp>(
         } catch {
           // ignore parse error
         }
-        throw new VelnClientError(res.status, 'VALIDATION_ERROR', 'Validation failed', issues)
+        throw new OakBunClientError(res.status, 'VALIDATION_ERROR', 'Validation failed', issues)
       }
-      throw new VelnClientError(res.status, `HTTP_${res.status}`, `HTTP ${res.status}`)
+      throw new OakBunClientError(res.status, `HTTP_${res.status}`, `HTTP ${res.status}`)
     }
 
     // Parse JSON response
@@ -127,5 +127,5 @@ export function createClient<TApp>(
     put:    (path, opts) => request('PUT',    path as string, opts as ClientOptions<RouteEntry>),
     patch:  (path, opts) => request('PATCH',  path as string, opts as ClientOptions<RouteEntry>),
     delete: (path, opts) => request('DELETE', path as string, opts as ClientOptions<RouteEntry>),
-  } as VelnClient<ExtractRoutes<TApp> extends RouteMap ? ExtractRoutes<TApp> : Record<never, never>>
+  } as OakBunClient<ExtractRoutes<TApp> extends RouteMap ? ExtractRoutes<TApp> : Record<never, never>>
 }

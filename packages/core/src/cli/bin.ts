@@ -7,11 +7,11 @@ import { migrateGenerate }  from './commands/migrate/generate'
 import { migrateRollback }  from './commands/migrate/rollback'
 import { makeMigration }    from './commands/make/migration'
 import { tinker }           from './commands/tinker'
-import { BoundVelnDB }      from '../db/index'
+import { BoundOakBunDB }      from '../db/index'
 import { HookExecutor }     from '../hooks/executor'
-import type { VelnConfig }  from './config/types'
+import type { OakBunConfig }  from './config/types'
 
-type BuiltinHandler = (args: string[], config: VelnConfig) => Promise<void>
+type BuiltinHandler = (args: string[], config: OakBunConfig) => Promise<void>
 
 const BUILTIN: Record<string, BuiltinHandler> = {
   'migrate:run':      migrateRun,
@@ -97,7 +97,7 @@ async function main(): Promise<void> {
   if (custom) {
     const parsed  = parseArgs(rest, custom._options)
     const adapter = await loadAdapter(config)
-    const db      = new BoundVelnDB(adapter, new HookExecutor(), {})
+    const db      = new BoundOakBunDB(adapter, new HookExecutor(), {})
     await custom._action(parsed, { db, adapter })
     await adapter.close()
     process.exit(0)

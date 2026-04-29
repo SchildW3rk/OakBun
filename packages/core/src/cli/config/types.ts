@@ -1,8 +1,8 @@
-import type { VelnAdapter } from '../../adapter/types'
-import type { BoundVelnDB } from '../../db/index'
+import type { OakBunAdapter } from '../../adapter/types'
+import type { BoundOakBunDB } from '../../db/index'
 
-export interface VelnConfig {
-  adapter?:    VelnAdapter
+export interface OakBunConfig {
+  adapter?:    OakBunAdapter
   features?:   string   // default: './src/features'
   schema?:     string   // default: './src/schema'
   tables?:     string   // default: './src/tables'
@@ -17,8 +17,8 @@ export interface CommandOption {
 }
 
 export interface CommandContext {
-  db:      BoundVelnDB
-  adapter: VelnAdapter
+  db:      BoundOakBunDB
+  adapter: OakBunAdapter
 }
 
 export interface CommandDef {
@@ -54,7 +54,7 @@ class CommandBuilder {
   }
 }
 
-export function defineConfig(config: VelnConfig): VelnConfig {
+export function defineConfig(config: OakBunConfig): OakBunConfig {
   return config
 }
 

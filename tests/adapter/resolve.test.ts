@@ -1,33 +1,33 @@
 import { describe, test, expect } from 'bun:test'
-import { resolveAdapter, isVelnAdapter } from '../../packages/core/src/adapter/resolve'
+import { resolveAdapter, isOakBunAdapter } from '../../packages/core/src/adapter/resolve'
 import { SQLiteAdapter } from '../../packages/core/src/adapter/sqlite'
 
-// ── isVelnAdapter ─────────────────────────────────────────────────────────────
+// ── isOakBunAdapter ─────────────────────────────────────────────────────────────
 
-describe('isVelnAdapter', () => {
+describe('isOakBunAdapter', () => {
   test('SQLiteAdapter instance → true', () => {
     const adapter = new SQLiteAdapter({ path: ':memory:' })
-    expect(isVelnAdapter(adapter)).toBe(true)
+    expect(isOakBunAdapter(adapter)).toBe(true)
   })
 
   test('plain object without query/execute → false', () => {
-    expect(isVelnAdapter({ foo: 'bar' })).toBe(false)
+    expect(isOakBunAdapter({ foo: 'bar' })).toBe(false)
   })
 
   test('null → false', () => {
-    expect(isVelnAdapter(null)).toBe(false)
+    expect(isOakBunAdapter(null)).toBe(false)
   })
 
   test('object with query + execute functions → true', () => {
     const fake = { query: () => {}, execute: () => {} }
-    expect(isVelnAdapter(fake)).toBe(true)
+    expect(isOakBunAdapter(fake)).toBe(true)
   })
 })
 
 // ── resolveAdapter ────────────────────────────────────────────────────────────
 
 describe('resolveAdapter', () => {
-  test('passes through an existing VelnAdapter', () => {
+  test('passes through an existing OakBunAdapter', () => {
     const adapter = new SQLiteAdapter({ path: ':memory:' })
     expect(resolveAdapter(adapter)).toBe(adapter)
   })
@@ -65,7 +65,7 @@ describe('createMigrator with AdapterConfig', () => {
     expect(typeof migrator.rollback).toBe('function')
   })
 
-  test('accepts VelnAdapter instance directly', async () => {
+  test('accepts OakBunAdapter instance directly', async () => {
     const { createMigrator } = await import('../../packages/core/src/db/migrations/index')
     const adapter = new SQLiteAdapter({ path: ':memory:' })
     const migrator = createMigrator(adapter, { migrationsDir: '/nonexistent' })

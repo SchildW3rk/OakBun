@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'bun:test'
 import { PostgresAdapter } from '../../packages/core/src/adapter/postgres'
 import type { PostgresConfig } from '../../packages/core/src/adapter/postgres'
-import type { VelnAdapter } from '../../packages/core/src/adapter/types'
+import type { OakBunAdapter } from '../../packages/core/src/adapter/types'
 
 // ── Compile-time + instantiation tests (no real DB needed) ────────────────
 
@@ -22,7 +22,7 @@ describe('PostgresAdapter — instantiation', () => {
     expect(() => new PostgresAdapter(config)).not.toThrow()
   })
 
-  test('implements VelnAdapter interface (duck-type)', () => {
+  test('implements OakBunAdapter interface (duck-type)', () => {
     const adapter = new PostgresAdapter({ url: 'postgres://user:pass@localhost:5432/test' })
     // All four methods must exist and be functions
     expect(typeof adapter.query).toBe('function')
@@ -31,9 +31,9 @@ describe('PostgresAdapter — instantiation', () => {
     expect(typeof adapter.close).toBe('function')
   })
 
-  test('is assignable to VelnAdapter', () => {
+  test('is assignable to OakBunAdapter', () => {
     // This test is compile-time only — if it type-checks, the assignment is valid.
-    const adapter: VelnAdapter = new PostgresAdapter({ url: 'postgres://localhost/test' })
+    const adapter: OakBunAdapter = new PostgresAdapter({ url: 'postgres://localhost/test' })
     expect(adapter).toBeDefined()
   })
 })

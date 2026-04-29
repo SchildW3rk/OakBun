@@ -1,7 +1,7 @@
-import type { VelnConfig } from '../../config/types'
+import type { OakBunConfig } from '../../config/types'
 import { loadAdapter } from './adapter'
 
-export async function migrateRollback(_args: string[], config: VelnConfig): Promise<void> {
+export async function migrateRollback(_args: string[], config: OakBunConfig): Promise<void> {
   const { createMigrator } = await import('../../../db/migrations/index')
 
   const migrationsDir = config.migrations ?? './migrations'

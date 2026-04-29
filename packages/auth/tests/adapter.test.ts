@@ -1,25 +1,25 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 import { SQLiteAdapter } from '../../../packages/core/src/adapter/sqlite'
-import { createVelnDbAdapter } from '../src/adapter.js'
+import { createOakBunDbAdapter } from '../src/adapter.js'
 import { createAuthTables } from '../src/migrate.js'
 
 function makeAdapter() {
-  const veln = new SQLiteAdapter()
-  const db = createVelnDbAdapter(veln)({})
-  return { veln, db }
+  const oakbun = new SQLiteAdapter()
+  const db = createOakBunDbAdapter(oakbun)({})
+  return { oakbun, db }
 }
 
-type DBAdapter = ReturnType<ReturnType<typeof createVelnDbAdapter>>
+type DBAdapter = ReturnType<ReturnType<typeof createOakBunDbAdapter>>
 
-describe('createVelnDbAdapter', () => {
-  let veln: SQLiteAdapter
+describe('createOakBunDbAdapter', () => {
+  let oakbun: SQLiteAdapter
   let db: DBAdapter
 
   beforeEach(async () => {
     const inst = makeAdapter()
-    veln = inst.veln
+    oakbun = inst.oakbun
     db = inst.db
-    await createAuthTables(veln)
+    await createAuthTables(oakbun)
   })
 
   // Helper: create a user without specifying id (factory generates it)
@@ -162,7 +162,7 @@ describe('createVelnDbAdapter', () => {
     const userId = user['id'] as string
 
     // Check raw SQLite storage
-    const raw = await veln.query<Record<string, unknown>>(
+    const raw = await oakbun.query<Record<string, unknown>>(
       'SELECT "emailVerified" FROM "user" WHERE "id" = ?',
       [userId],
     )
@@ -175,7 +175,7 @@ describe('createVelnDbAdapter', () => {
     const user = await createUser('date@test.com', 'DateTest')
     const userId = user['id'] as string
 
-    const raw = await veln.query<Record<string, unknown>>(
+    const raw = await oakbun.query<Record<string, unknown>>(
       'SELECT "createdAt" FROM "user" WHERE "id" = ?',
       [userId],
     )
